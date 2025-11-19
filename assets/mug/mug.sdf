@@ -5,7 +5,7 @@
 
       <!-- Rough inertial properties -->
       <inertial>
-        <mass>0.3</mass>
+        <mass>0.1</mass>
         <inertia>
           <ixx>1e-4</ixx>
           <iyy>1e-4</iyy>
