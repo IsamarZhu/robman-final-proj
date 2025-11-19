@@ -13,7 +13,7 @@ directives:
     name: chair
     file: file:///workspaces/robman-final-proj/assets/WoodenChair/model.sdf
 - add_weld:
-    parent: world
+    parent: floor::table_link
     child: chair::body
     X_PC:
         translation: [0, 1.4, 0.0]
@@ -125,7 +125,7 @@ directives:
     parent: chair::body
     child: person::body
     X_PC:
-        translation: [0, 0.0, 0.0]
+        translation: [-0.05, 0.0, 0.0]
         rotation: !Rpy { deg: [0, 0, 90]}
 
 
