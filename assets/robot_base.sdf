@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <sdf version="1.7">
-  <model name="table">
+  <model name="robot_base">
     <pose>0 0 0 0 0 0</pose>
     <link name="table_link">
       <inertial>

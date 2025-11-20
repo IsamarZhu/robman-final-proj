@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <model name="cafe_table">
+    <link name="table_body">
+      <visual name="table_visual">
+        <geometry>
+          <mesh>
+            <uri>package://drake_models/manipulation_station/assets/table_wide.gltf</uri>
+            <scale>0.5 0.5 0.5</scale>  <!-- Scale down to 50% -->
+          </mesh>
+        </geometry>
+      </visual>
+      <collision name="table_top">
+        <pose> 0 0 -0.05 0 0 0</pose>
+        <geometry>
+          <box>
+            <!-- Original: 1.5 x 2.1875 x 0.1 -->
+            <!-- Scaled 50%: 0.75 x 1.09375 x 0.05 -->
+            <size>0.75 1.09375 0.05</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+  </model>
+</sdf>
