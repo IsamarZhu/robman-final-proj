@@ -37,7 +37,7 @@ directives:
     parent: world
     child: table::table_body
     X_PC:
-        translation: [0, 0, 0.75]
+        translation: [0.3, 0, 0.75] # moved table closer
         rotation: !Rpy { deg: [0, 0, 0] }
         
 - add_model:
@@ -46,7 +46,7 @@ directives:
     default_free_body_pose:
       base_link:
         translation: [1.4, 0.35, 1.35]
-        rotation: !Rpy { deg: [0, 0, 0] }
+        rotation: !Rpy { deg: [0, 0, 90] } # rotate handle away from gripper
 
 
 - add_model:
