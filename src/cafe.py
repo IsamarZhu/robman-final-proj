@@ -44,7 +44,7 @@ plant = station.GetSubsystemByName("plant")
 from pydrake.systems.primitives import ConstantVectorSource
 initial_positions_arm = [
     -1.57,  # joint 1
-    0.1,    # joint 2
+    0.9,    # joint 2
     0,      # joint 3
     -0.9,   # joint 4
     0,      # joint 5
@@ -53,12 +53,12 @@ initial_positions_arm = [
 ]
 initial_positions_plate = [
     -1.57,  # joint 1
-    -1.87,    # joint 2
+    -1.5,    # joint 2
     0,      # joint 3
-    -1.8,   # joint 4
+    0.9,   # joint 4
     0,      # joint 5
-    1.6,    # joint 6
-    1.3       # joint 7
+    -1.6,    # joint 6
+    0.3       # joint 7
 ]
 
 # currently making both arms be held to the same initial position

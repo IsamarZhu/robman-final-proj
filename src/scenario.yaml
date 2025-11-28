@@ -64,8 +64,8 @@ directives:
     parent: robot_base::table_link
     child: iiwa_arm::iiwa_link_0
     X_PC:
-        translation: [0, -0.3, 0.25]
-        rotation: !Rpy { deg: [0, 0, 180]}
+        translation: [0, -0.2, 0.6]
+        rotation: !Rpy { deg: [-90, 90, 180]}
         
 - add_model:
     name: wsg_arm
@@ -96,8 +96,8 @@ directives:
     parent: robot_base::table_link
     child: iiwa_plate::iiwa_link_0
     X_PC:
-        translation: [0, 0.3, 0.25]
-        rotation: !Rpy { deg: [0, 0, 0]}
+        translation: [0, 0.2, 0.6]
+        rotation: !Rpy { deg: [-90, 90, 0]}
 - add_model:
     name: wsg_plate
     file: package://manipulation/hydro/schunk_wsg_50_with_tip.sdf
@@ -106,7 +106,7 @@ directives:
     child: wsg_plate::body
     X_PC:
         translation: [0, 0, 0.09]
-        rotation: !Rpy { deg: [90, 0, 105]}
+        rotation: !Rpy { deg: [90, 0, 75]}
 - add_model:
     name: tray
     file: file:///workspaces/robman-final-proj/assets/tray.sdf
