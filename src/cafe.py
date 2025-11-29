@@ -31,7 +31,7 @@ station = MakeHardwareStation(scenario, meshcat=meshcat)
 # Register the station with the builder before adding point-cloud systems so
 # that AddPointClouds can connect to station's ports.
 builder.AddSystem(station)
-to_point_cloud = AddPointClouds(scenario=scenario, station=station, builder=builder, meshcat=meshcat)
+to_point_cloud = AddPointClouds(scenario=scenario, station=station, builder=builder, meshcat=None) # izzy make meshcat=meschat equal to 
 builder.ExportOutput(to_point_cloud["camera0"].get_output_port(), "camera_point_cloud0")
 builder.ExportOutput(to_point_cloud["camera1"].get_output_port(), "camera_point_cloud1")
 builder.ExportOutput(to_point_cloud["camera2"].get_output_port(), "camera_point_cloud2")
@@ -105,20 +105,17 @@ def remove_table_points(point_cloud: PointCloud) -> PointCloud:
     filtered_point_cloud = PointCloud(filtered_xyz.shape[1])
     filtered_point_cloud.mutable_xyzs()[:] = filtered_xyz
     return filtered_point_cloud
-
-
-# TODO: remove the table points from the concatenated point clouds
 letter_point_cloud = remove_table_points(downsampled_pc)
 # izzy this is what's generating the red section of what the pointclouds are seeing, the tan is what got filtered out
-meshcat.SetObject(
-    "letter_point_cloud", letter_point_cloud, point_size=0.05, rgba=Rgba(1, 0, 0)
-)
+# meshcat.SetObject(
+#     "letter_point_cloud", letter_point_cloud, point_size=0.05, rgba=Rgba(1, 0, 0)
+# )
 diagram.ForcedPublish(context)
 
 if running_as_notebook:
     simulator.set_target_realtime_rate(1.0)
 
 meshcat.StartRecording()
-simulator.AdvanceTo(500.0)
+# simulator.AdvanceTo(500.0)
 time.sleep(30.0)
 # meshcat.PublishRecording() #turning this on terminates or smthn, idk

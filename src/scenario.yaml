@@ -30,21 +30,45 @@ directives:
         rotation: !Rpy { deg: [0, 0, 0]}
     
 - add_model:
-    name: table
+    name: table0
     file: package://drake_models/manipulation_station/table_wide.sdf
 - add_weld:
     parent: world
-    child: table::table_body
+    child: table0::table_body
     X_PC:
         translation: [0.3, 0, 0.75] # moved table closer
         rotation: !Rpy { deg: [0, 0, 0] }
-        
 - add_model:
-    name: mug
+    name: table1
+    file: package://drake_models/manipulation_station/table_wide.sdf
+- add_weld:
+    parent: world
+    child: table1::table_body
+    X_PC:
+        translation: [3.6, 3.0, 0.75] # moved table closer
+        rotation: !Rpy { deg: [0, 0, 90] }
+        
+
+- add_model:
+    name: mug1
     file: file:///workspaces/robman-final-proj/assets/mug/mug.sdf
     default_free_body_pose:
       base_link:
-        translation: [0.9, -0.1, 1]
+        translation: [0.8, -0.1, 1]
+        rotation: !Rpy { deg: [0, 0, 90] } # rotate handle away from gripper
+- add_model:
+    name: mug2
+    file: file:///workspaces/robman-final-proj/assets/mug/mug.sdf
+    default_free_body_pose:
+      base_link:
+        translation: [0.95, -0.1, 1]
+        rotation: !Rpy { deg: [0, 0, 90] } # rotate handle away from gripper
+- add_model:
+    name: mug3
+    file: file:///workspaces/robman-final-proj/assets/mug/mug.sdf
+    default_free_body_pose:
+      base_link:
+        translation: [0.95, 0.05, 1]
         rotation: !Rpy { deg: [0, 0, 90] } # rotate handle away from gripper
 
 # kuka iiwa information
