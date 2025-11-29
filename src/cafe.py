@@ -107,9 +107,9 @@ def remove_table_points(point_cloud: PointCloud) -> PointCloud:
     return filtered_point_cloud
 letter_point_cloud = remove_table_points(downsampled_pc)
 # izzy this is what's generating the red section of what the pointclouds are seeing, the tan is what got filtered out
-# meshcat.SetObject(
-#     "letter_point_cloud", letter_point_cloud, point_size=0.05, rgba=Rgba(1, 0, 0)
-# )
+meshcat.SetObject(
+    "letter_point_cloud", letter_point_cloud, point_size=0.05, rgba=Rgba(1, 0, 0)
+)
 diagram.ForcedPublish(context)
 
 if running_as_notebook:

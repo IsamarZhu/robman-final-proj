@@ -152,43 +152,82 @@ directives:
         rotation: !Rpy { deg: [0, 0, 90]}
 
 # camera setup
+# - add_frame:
+#     name: camera0_origin
+#     X_PF:
+#         base_frame: world
+#         rotation: !Rpy { deg: [-130.0, 0.0, 0.0]}
+#         translation: [0.9, -0.3, 1.2]
+# - add_model:
+#     name: camera0
+#     file: package://manipulation/camera_box.sdf
+# - add_weld:
+#     parent: camera0_origin
+#     child: camera0::base
+
+# - add_frame:
+#     name: camera1_origin
+#     X_PF:
+#         base_frame: world
+#         rotation: !Rpy { deg: [-130, 0.0, 240.0]}
+#         translation: [0.6, 0, 1.2]
+# - add_model:
+#     name: camera1
+#     file: package://manipulation/camera_box.sdf
+# - add_weld:
+#     parent: camera1_origin
+#     child: camera1::base
+
+# - add_frame:
+#     name: camera2_origin
+#     X_PF:
+#         base_frame: world
+#         rotation: !Rpy { deg: [-120.0, 0.0, 120.0]}
+#         translation: [1.1, 0, 1.2]
+# - add_model:
+#     name: camera2
+#     file: package://manipulation/camera_box.sdf
+# - add_weld:
+#     parent: camera2_origin
+#     child: camera2::base
+# camera setup
 - add_frame:
     name: camera0_origin
     X_PF:
-        base_frame: world
-        rotation: !Rpy { deg: [-130.0, 0.0, 0.0]}
-        translation: [0.9, -0.3, 1.2]
+        base_frame: tray::table_link
+        rotation: !Rpy { deg: [-40.0, 0.0, 120.0]}
+        translation: [0.2, 0.1, -.2]
 - add_model:
     name: camera0
     file: package://manipulation/camera_box.sdf
 - add_weld:
-    parent: camera0_origin
+    parent: tray::camera0_origin
     child: camera0::base
 
 - add_frame:
     name: camera1_origin
     X_PF:
-        base_frame: world
-        rotation: !Rpy { deg: [-130, 0.0, 240.0]}
-        translation: [0.6, 0, 1.2]
+        base_frame: tray::table_link
+        rotation: !Rpy { deg: [-40.0, 0.0, 210.0]}
+        translation: [-0.1, 0.2, -.2]
 - add_model:
     name: camera1
     file: package://manipulation/camera_box.sdf
 - add_weld:
-    parent: camera1_origin
+    parent: tray::camera1_origin
     child: camera1::base
 
 - add_frame:
     name: camera2_origin
     X_PF:
-        base_frame: world
-        rotation: !Rpy { deg: [-120.0, 0.0, 120.0]}
-        translation: [1.1, 0, 1.2]
+        base_frame: tray::table_link
+        rotation: !Rpy { deg: [-40.0, 0.0, 300.0]}
+        translation: [-0.3, -0.2, -.2]
 - add_model:
     name: camera2
     file: package://manipulation/camera_box.sdf
 - add_weld:
-    parent: camera2_origin
+    parent: tray::camera2_origin
     child: camera2::base
 
 cameras:
