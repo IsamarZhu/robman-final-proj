@@ -19,7 +19,6 @@ directives:
         translation: [0, 1.4, 0.0]
         rotation: !Rpy { deg: [0, 0, -90]}
 
-
 - add_model:
     name: robot_base
     file: file:///workspaces/robman-final-proj/assets/robot_base.sdf
@@ -45,10 +44,10 @@ directives:
     file: file:///workspaces/robman-final-proj/assets/mug/mug.sdf
     default_free_body_pose:
       base_link:
-        translation: [1.4, 0.35, 1.35]
+        translation: [0.9, -0.1, 1]
         rotation: !Rpy { deg: [0, 0, 90] } # rotate handle away from gripper
 
-
+# kuka iiwa information
 - add_model:
     name: iiwa_arm
     file: package://drake_models/iiwa_description/sdf/iiwa7_no_collision.sdf
@@ -86,12 +85,12 @@ directives:
     file: package://drake_models/iiwa_description/sdf/iiwa7_no_collision.sdf
     default_joint_positions:
         iiwa_joint_1: [-1.57]
-        iiwa_joint_2: [-1.87]
+        iiwa_joint_2: [-1.5]
         iiwa_joint_3: [0]
-        iiwa_joint_4: [-1.8]
+        iiwa_joint_4: [0.9]
         iiwa_joint_5: [0]
-        iiwa_joint_6: [1.6]
-        iiwa_joint_7: [1.3]
+        iiwa_joint_6: [-1.2]
+        iiwa_joint_7: [0.3]
 - add_weld:
     parent: robot_base::table_link
     child: iiwa_plate::iiwa_link_0
@@ -114,7 +113,7 @@ directives:
     parent: wsg_plate::body
     child: tray::table_link
     X_PC:
-        translation: [0, 0.15, 0.0]
+        translation: [0, 0.2, 0.0]
         rotation: !Rpy { deg: [0, 90, 0]}
 
 
@@ -128,6 +127,64 @@ directives:
         translation: [-0.05, 0.0, 0.0]
         rotation: !Rpy { deg: [0, 0, 90]}
 
+# camera setup
+- add_frame:
+    name: camera0_origin
+    X_PF:
+        base_frame: world
+        rotation: !Rpy { deg: [-130.0, 0.0, 0.0]}
+        translation: [0.9, -0.3, 1.2]
+- add_model:
+    name: camera0
+    file: package://manipulation/camera_box.sdf
+- add_weld:
+    parent: camera0_origin
+    child: camera0::base
+
+- add_frame:
+    name: camera1_origin
+    X_PF:
+        base_frame: world
+        rotation: !Rpy { deg: [-130, 0.0, 240.0]}
+        translation: [0.6, 0, 1.2]
+- add_model:
+    name: camera1
+    file: package://manipulation/camera_box.sdf
+- add_weld:
+    parent: camera1_origin
+    child: camera1::base
+
+- add_frame:
+    name: camera2_origin
+    X_PF:
+        base_frame: world
+        rotation: !Rpy { deg: [-120.0, 0.0, 120.0]}
+        translation: [1.1, 0, 1.2]
+- add_model:
+    name: camera2
+    file: package://manipulation/camera_box.sdf
+- add_weld:
+    parent: camera2_origin
+    child: camera2::base
+
+cameras:
+    camera0:
+        name: camera0
+        depth: True
+        X_PB:
+            base_frame: camera0::base
+
+    camera1:
+        name: camera1
+        depth: True
+        X_PB:
+            base_frame: camera1::base
+
+    camera2:
+        name: camera2
+        depth: True
+        X_PB:
+            base_frame: camera2::base
 
 model_drivers:
     iiwa_arm: !IiwaDriver
