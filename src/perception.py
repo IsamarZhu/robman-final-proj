@@ -14,22 +14,12 @@ TABLE_LENGTH = 66
 TABLE_DEPTH = 11.248
 SIZE_TOLERANCE = 0.07
 
+CROP_X_START = 89  # left edge
+CROP_Y_START = 0   # top edge
+CROP_X_END = 560    # right edge
+CROP_Y_END = 480    # bottom edge
 
 def add_cameras(builder, plant, scene_graph, scenario):
-    """
-    Adds RGB-D cameras to the simulation based on the provided camera configurations.
-
-    Args:
-        builder: The DiagramBuilder to which the cameras will be added.
-        plant: The MultibodyPlant containing the robot and environment.
-        scene_graph: The SceneGraph for geometry queries.
-        camera_configs: A list of tuples (camera_name, camera_model) specifying
-                        the cameras to be added.
-    Returns:
-        sensors: A dictionary mapping camera names to their RgbdSensor systems.
-        depth_to_cloud_systems: A dictionary mapping camera names to their
-                                DepthImageToPointCloud systems (if applicable).
-    """
     rgbd_sensors = {}
     point_cloud_systems = {}
 
@@ -66,19 +56,16 @@ def add_cameras(builder, plant, scene_graph, scenario):
                 )
             )
             
-            # Connect to scene graph
             builder.Connect(
                 scene_graph.get_query_output_port(),
                 sensor.query_object_input_port()
             )
             
-            # Export RGB and depth outputs
             builder.ExportOutput(sensor.color_image_output_port(), f"{cam_name}.rgb_image")
             builder.ExportOutput(sensor.depth_image_32F_output_port(), f"{cam_name}.depth_image")
             
             rgbd_sensors[cam_name] = sensor
             
-            # Create point cloud converter for camera0, camera1, camera2 (not topview)
             if cam_name in ["camera0", "camera1", "camera2"]:
                 depth_to_cloud = builder.AddSystem(
                     DepthImageToPointCloud(
@@ -87,19 +74,16 @@ def add_cameras(builder, plant, scene_graph, scenario):
                     )
                 )
                 
-                # Connect depth image to point cloud converter
                 builder.Connect(
                     sensor.depth_image_32F_output_port(),
                     depth_to_cloud.depth_image_input_port()
                 )
                 
-                # Connect camera pose
                 builder.Connect(
                     sensor.body_pose_in_world_output_port(),
                     depth_to_cloud.camera_pose_input_port()
                 )
                 
-                # Export point cloud output
                 cam_num = cam_name[-1]  # Get the number from "camera0", "camera1", etc.
                 builder.ExportOutput(
                     depth_to_cloud.point_cloud_output_port(),
@@ -107,35 +91,19 @@ def add_cameras(builder, plant, scene_graph, scenario):
                 )
                 
                 point_cloud_systems[cam_name] = depth_to_cloud
-                # print(f"  {cam_name}: RGBD sensor + point cloud converter")
-            # else:
-                # print(f"  {cam_name}: RGBD sensor only")
             
         except Exception as e:
             print(f"  Warning: Could not add camera {cam_name}: {e}")
 
 def get_depth(diagram, context):
-    # Save and crop the RGB image
-    topview_camera_rgb = diagram.GetOutputPort("topview_camera.rgb_image").Eval(context)
-    image_array = np.copy(topview_camera_rgb.data).reshape(
-        (topview_camera_rgb.height(), topview_camera_rgb.width(), -1)
-    )
-
-    # Define crop region
-    crop_x_start = 89  # left edge
-    crop_y_start = 0   # top edge
-    crop_x_end = 560    # right edge
-    crop_y_end = 480    # bottom edge
-    image_cropped = image_array[crop_y_start:crop_y_end, crop_x_start:crop_x_end]
-
-    # Depth image processing with crop
     topview_camera_depth = diagram.GetOutputPort("topview_camera.depth_image").Eval(context)
     depth_array = np.copy(topview_camera_depth.data).reshape(
         (topview_camera_depth.height(), topview_camera_depth.width())
     )
-    depth_array_cropped = depth_array[crop_y_start:crop_y_end, crop_x_start:crop_x_end]
+    depth_array_cropped = depth_array[CROP_Y_START:CROP_Y_END, CROP_X_START:CROP_X_END]
 
-    tables = detect_tables_from_depth(depth_array_cropped, image_cropped)
+    tables = detect_tables_from_depth(depth_array_cropped)
+    return tables
 
 
 def detect_tables_from_depth(depth_array):
@@ -168,7 +136,7 @@ def detect_tables_from_depth(depth_array):
     # cv2.imwrite(str(thresh_output_path), thresh)
     
     # Find contours of individual tables
-    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     contour_features = []
     for cnt in contours:
         area = cv2.contourArea(cnt)
@@ -203,13 +171,11 @@ def detect_tables_from_depth(depth_array):
         dim1_match = dim1_diff < SIZE_TOLERANCE
         dim2_match = dim2_diff < SIZE_TOLERANCE
         
-        # Only accept if size AND depth match (more strict)
         if dim1_match and dim2_match:
             table_contours.append(feat['contour'])
 
-    # Create visualization using the normalized depth image (not raw float32)
     result_img = cv2.cvtColor(depth_normalized.astype(np.uint8), cv2.COLOR_GRAY2BGR)
-    
+
     tables_info = []
     for i, contour in enumerate(table_contours):
         # Fit minimum area rectangle

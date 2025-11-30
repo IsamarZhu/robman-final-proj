@@ -23,7 +23,7 @@ from pydrake.multibody.parsing import ProcessModelDirectives, ModelDirectives
 from manipulation import running_as_notebook
 from manipulation.station import LoadScenario
 
-from cameras import add_cameras, get_depth
+from perception import add_cameras, get_depth
 
 
 if running_as_notebook:
@@ -137,7 +137,8 @@ plant.SetPositions(plant_context, iiwa_plate_instance, initial_positions_plate)
 
 diagram.ForcedPublish(context)
 
-get_depth(diagram, context)
+tables = get_depth(diagram, context)
+
 
 # generating the pointcloud
 camera0_point_cloud = diagram.GetOutputPort("camera_point_cloud0").Eval(context)
