@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <sdf version="1.7">
-  <model name="table">
+  <model name="tray">
     <pose>0 0 0 0 0 0</pose>
-    <link name="table_link">
+    <link name="tray_link">
       <inertial>
         <mass>2</mass>
         <inertia>

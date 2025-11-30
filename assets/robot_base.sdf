@@ -2,7 +2,7 @@
 <sdf version="1.7">
   <model name="robot_base">
     <pose>0 0 0 0 0 0</pose>
-    <link name="table_link">
+    <link name="robot_base_link">
       <inertial>
         <mass>20</mass>
         <inertia>

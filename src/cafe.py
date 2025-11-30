@@ -3,16 +3,28 @@ import time
 import mpld3
 import numpy as np
 from pydrake.all import (
+    AddMultibodyPlantSceneGraph,
+    Parser,
     DiagramBuilder,
     Concatenate,
     PointCloud,
     Simulator,
     StartMeshcat,
-    Rgba
+    SpatialVelocity,
+    Rgba,
+    RigidTransform,
+    RotationMatrix
 )
+from pydrake.common.eigen_geometry import Quaternion
+from pydrake.systems.primitives import ConstantVectorSource
+from pydrake.geometry import MeshcatVisualizer, MeshcatVisualizerParams, MakeRenderEngineVtk, RenderEngineVtkParams
+
+from pydrake.multibody.parsing import ProcessModelDirectives, ModelDirectives
 from PIL import Image
 from manipulation import running_as_notebook
 from manipulation.station import LoadScenario, MakeHardwareStation, AddPointClouds
+
+from cameras import add_cameras, get_depth
 
 
 if running_as_notebook:
@@ -27,19 +39,32 @@ with open(scenario_file, "r") as f:
 scenario = LoadScenario(data=scenario_yaml)
 
 builder = DiagramBuilder()
-station = MakeHardwareStation(scenario, meshcat=meshcat)
-# Register the station with the builder before adding point-cloud systems so
-# that AddPointClouds can connect to station's ports.
-builder.AddSystem(station)
-to_point_cloud = AddPointClouds(scenario=scenario, station=station, builder=builder, meshcat=None) # izzy make meshcat=meschat equal to 
-builder.ExportOutput(to_point_cloud["camera0"].get_output_port(), "camera_point_cloud0")
-builder.ExportOutput(to_point_cloud["camera1"].get_output_port(), "camera_point_cloud1")
-builder.ExportOutput(to_point_cloud["camera2"].get_output_port(), "camera_point_cloud2")
-plant = station.GetSubsystemByName("plant")
+plant, scene_graph = AddMultibodyPlantSceneGraph(builder, time_step=0.001)
+parser = Parser(plant)
+parser.package_map().Add("manipulation", "/usr/local/lib/python3.12/dist-packages/manipulation/models")
+
+model_directives = ModelDirectives(directives=scenario.directives)
+models = ProcessModelDirectives(model_directives, parser)
+
+robot_base_instance = plant.GetModelInstanceByName("robot_base")
+iiwa_arm_instance = plant.GetModelInstanceByName("iiwa_arm")
+iiwa_plate_instance = plant.GetModelInstanceByName("iiwa_plate")
+wsg_arm_instance = plant.GetModelInstanceByName("wsg_arm")
+wsg_plate_instance = plant.GetModelInstanceByName("wsg_plate")
+
+plant.Finalize()
+
+renderer_name = "renderer"
+scene_graph.AddRenderer(renderer_name, MakeRenderEngineVtk(RenderEngineVtkParams()))
 
 
+visualizer = MeshcatVisualizer.AddToBuilder(
+    builder, scene_graph, meshcat,
+    MeshcatVisualizerParams()
+)
 
-from pydrake.systems.primitives import ConstantVectorSource
+add_cameras(builder, plant, scene_graph, scenario)
+
 initial_positions_arm = [
     -1.57,  # joint 1
     0.9,    # joint 2
@@ -59,102 +84,67 @@ initial_positions_plate = [
     0.3       # joint 7
 ]
 
+initial_base_pose = np.array([
+    1.0, 0.0, 0.0, 0.0,  # identity quaternion
+    1.4, 0.0, 0.4         # position from scenario
+])
+
+robot_body_initial = RigidTransform(
+    RotationMatrix(Quaternion(wxyz=initial_base_pose[:4])),
+    initial_base_pose[4:]
+)
+
 # currently making both arms be held to the same initial position
 position_arm_source = builder.AddSystem(ConstantVectorSource(initial_positions_arm))
 builder.Connect(
     position_arm_source.get_output_port(),
-    station.GetInputPort("iiwa_arm.position")
+    plant.get_actuation_input_port(iiwa_arm_instance)
+
 )
 position_plate_source = builder.AddSystem(ConstantVectorSource(initial_positions_plate))
 builder.Connect(
     position_plate_source.get_output_port(),
-    station.GetInputPort("iiwa_plate.position")
+    plant.get_actuation_input_port(iiwa_plate_instance)
 )
 
-wsg_arm_source = builder.AddSystem(ConstantVectorSource([0.1]))
+wsg_arm_source = builder.AddSystem(ConstantVectorSource([0.1, 0.1])) # open both fingers slightly
 builder.Connect(
     wsg_arm_source.get_output_port(),
-    station.GetInputPort("wsg_arm.position")
+    plant.get_actuation_input_port(wsg_arm_instance)
 )
-wsg_plate_source = builder.AddSystem(ConstantVectorSource([0]))
+
+wsg_plate_source = builder.AddSystem(ConstantVectorSource([0.0, 0.0])) # the grippers are gripping
 builder.Connect(
     wsg_plate_source.get_output_port(),
-    station.GetInputPort("wsg_plate.position")
+    plant.get_actuation_input_port(wsg_plate_instance)
 )
 
 diagram = builder.Build()
 simulator = Simulator(diagram)
 context = simulator.get_mutable_context()
-station_context = station.GetMyContextFromRoot(context)
+plant_context = plant.GetMyMutableContextFromRoot(context)
 
-
-# Save and crop the RGB image
-topview_camera_rgb = station.GetOutputPort("topview_camera.rgb_image").Eval(station_context)
-image_array = np.copy(topview_camera_rgb.data).reshape(
-    (topview_camera_rgb.height(), topview_camera_rgb.width(), -1)
+robot_base_body = plant.GetBodyByName("robot_base_link", robot_base_instance)
+X_initial = RigidTransform(
+    RotationMatrix(Quaternion(wxyz=initial_base_pose[:4])),
+    initial_base_pose[4:]
 )
+plant.SetFreeBodyPose(plant_context, robot_base_body, robot_body_initial)
+zero_vel = SpatialVelocity(w=[0., 0., 0.], v=[0., 0., 0.])
+plant.SetFreeBodySpatialVelocity(robot_base_body, zero_vel, plant_context)
 
-# Define crop region (x_start, y_start, x_end, y_end)
-# Example: crop center 300x300 region
-crop_x_start = 89  # left edge
-crop_y_start = 0   # top edge
-crop_x_end = 560    # right edge
-crop_y_end = 480    # bottom edge
+plant.SetPositions(plant_context, iiwa_arm_instance, initial_positions_arm)
+plant.SetPositions(plant_context, iiwa_plate_instance, initial_positions_plate)
 
-# Crop the RGB image
-image_cropped = image_array[crop_y_start:crop_y_end, crop_x_start:crop_x_end]
+diagram.ForcedPublish(context)
 
-# Save full image
-image_full = Image.fromarray(image_array.astype(np.uint8))
-output_path_full = Path("/workspaces/robman-final-proj/topview_camera_image_full.png")
-image_full.save(output_path_full)
-print(f"Full image saved to {output_path_full} with shape {image_array.shape}")
-
-# Save cropped image
-image = Image.fromarray(image_cropped.astype(np.uint8))
-output_path = Path("/workspaces/robman-final-proj/topview_camera_image.png")
-image.save(output_path)
-print(f"Cropped image saved to {output_path} with shape {image_cropped.shape}")
-
-# Depth image processing with crop
-topview_camera_depth = station.GetOutputPort("topview_camera.depth_image").Eval(station_context)
-depth_array = np.copy(topview_camera_depth.data).reshape(
-    (topview_camera_depth.height(), topview_camera_depth.width())
-)
-
-# Crop the depth array
-depth_array_cropped = depth_array[crop_y_start:crop_y_end, crop_x_start:crop_x_end]
-
-# Debug: Print depth statistics for cropped region
-print(f"Cropped depth array shape: {depth_array_cropped.shape}")
-print(f"Depth min: {np.min(depth_array_cropped)}")
-print(f"Depth max: {np.max(depth_array_cropped)}")
-print(f"Number of inf values: {np.sum(np.isinf(depth_array_cropped))}")
-
-# Normalize depth for visualization
-depth_array_vis = np.copy(depth_array_cropped)
-max_valid_depth = 15.0
-depth_array_vis[np.isinf(depth_array_vis)] = max_valid_depth
-
-depth_min = np.min(depth_array_vis)
-depth_max = np.max(depth_array_vis)
-print(f"Valid depth range: {depth_min} to {depth_max}")
-
-if depth_max > depth_min:
-    depth_normalized = 255 - ((depth_array_vis - depth_min) / (depth_max - depth_min) * 255)
-else:
-    depth_normalized = np.zeros_like(depth_array_vis)
-
-depth_image = Image.fromarray(depth_normalized.astype(np.uint8))
-depth_output_path = Path("/workspaces/robman-final-proj/topview_camera_depth.png")
-depth_image.save(depth_output_path)
-print(f"Cropped depth image saved to {depth_output_path}")
+get_depth(diagram, context)
 
 # generating the pointcloud
-camera0_letter_point_cloud = diagram.GetOutputPort("camera_point_cloud0").Eval(context)
-camera1_letter_point_cloud = diagram.GetOutputPort("camera_point_cloud1").Eval(context)
-camera2_letter_point_cloud = diagram.GetOutputPort("camera_point_cloud2").Eval(context)
-concatenated_pc = Concatenate([camera0_letter_point_cloud, camera1_letter_point_cloud, camera2_letter_point_cloud])
+camera0_point_cloud = diagram.GetOutputPort("camera_point_cloud0").Eval(context)
+camera1_point_cloud = diagram.GetOutputPort("camera_point_cloud1").Eval(context)
+camera2_point_cloud = diagram.GetOutputPort("camera_point_cloud2").Eval(context)
+concatenated_pc = Concatenate([camera0_point_cloud, camera1_point_cloud, camera2_point_cloud])
 
 voxel_size = 0.005  
 downsampled_pc = concatenated_pc.VoxelizedDownSample(voxel_size)
