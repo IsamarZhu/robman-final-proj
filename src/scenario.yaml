@@ -16,7 +16,7 @@ directives:
     parent: floor::floor_link
     child: chair::body
     X_PC:
-        translation: [-0.05, 0.0, 0.0]
+        translation: [-0.35, 0.0, 0.0]
         rotation: !Rpy { deg: [0, 0, 0]}
 
 - add_model:
@@ -24,8 +24,8 @@ directives:
     file: file:///workspaces/robman-final-proj/assets/robot_base.sdf
     default_free_body_pose:
       robot_base_link:
-        translation: [1.4, 0.0, 0.4]
-        rotation: !Rpy { deg: [0, 0, 0] }
+        translation: [-3.5, 3.5, 0.4]
+        rotation: !Rpy { deg: [0, 0, 180] }
 
 - add_model:
     name: table0

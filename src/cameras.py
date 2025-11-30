@@ -5,6 +5,15 @@ from pydrake.math import RigidTransform
 import numpy as np
 from pathlib import Path
 from PIL import Image
+import cv2
+
+TABLE_INTENSITY_MIN = 130
+TABLE_INTENSITY_MAX = 135
+TABLE_WIDTH = 45
+TABLE_LENGTH = 66
+TABLE_DEPTH = 11.248
+SIZE_TOLERANCE = 0.07
+
 
 def add_cameras(builder, plant, scene_graph, scenario):
     """
@@ -119,12 +128,6 @@ def get_depth(diagram, context):
     crop_y_end = 480    # bottom edge
     image_cropped = image_array[crop_y_start:crop_y_end, crop_x_start:crop_x_end]
 
-    # Save cropped image
-    image = Image.fromarray(image_cropped.astype(np.uint8))
-    output_path = Path("/workspaces/robman-final-proj/topview_camera_image.png")
-    image.save(output_path)
-    print(f"Cropped image saved to {output_path} with shape {image_cropped.shape}")
-
     # Depth image processing with crop
     topview_camera_depth = diagram.GetOutputPort("topview_camera.depth_image").Eval(context)
     depth_array = np.copy(topview_camera_depth.data).reshape(
@@ -132,8 +135,15 @@ def get_depth(diagram, context):
     )
     depth_array_cropped = depth_array[crop_y_start:crop_y_end, crop_x_start:crop_x_end]
 
-    # Normalize depth for visualization
-    depth_array_vis = np.copy(depth_array_cropped)
+    tables = detect_tables_from_depth(depth_array_cropped, image_cropped)
+
+
+def detect_tables_from_depth(depth_array):
+    """
+    filter by depth intensity and then by expected size
+    """
+    #Normalize depth for visualization
+    depth_array_vis = np.copy(depth_array)
     max_valid_depth = 15.0
     depth_array_vis[np.isinf(depth_array_vis)] = max_valid_depth
 
@@ -145,6 +155,122 @@ def get_depth(diagram, context):
         depth_normalized = np.zeros_like(depth_array_vis)
 
     depth_image = Image.fromarray(depth_normalized.astype(np.uint8))
-    depth_output_path = Path("/workspaces/robman-final-proj/topview_camera_depth.png")
+    depth_output_path = Path("/workspaces/robman-final-proj/original_depth.png")
     depth_image.save(depth_output_path)
     print(f"Cropped depth image saved to {depth_output_path}")
+    
+    thresh = np.where((depth_normalized > TABLE_INTENSITY_MIN) & (depth_normalized <= TABLE_INTENSITY_MAX), 255, 0).astype(np.uint8)
+    kernel_small = np.ones((3, 3), np.uint8)
+    thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel_small, iterations=1)
+    
+    # Save thresholded image for debugging
+    # thresh_output_path = Path("/workspaces/robman-final-proj/threshold_debug.png")
+    # cv2.imwrite(str(thresh_output_path), thresh)
+    
+    # Find contours of individual tables
+    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contour_features = []
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        if area > 2000:
+            rect = cv2.minAreaRect(cnt)
+            (cx, cy), (w, h), angle = rect
+            dim1, dim2 = sorted([w, h])
+            mask = np.zeros(depth_array.shape, dtype=np.uint8)
+            cv2.drawContours(mask, [cnt], 0, 255, -1)
+            mean_depth = np.mean(depth_array[mask > 0])
+            
+            contour_features.append({
+                'contour': cnt,
+                'area': area,
+                'dim1': dim1,
+                'dim2': dim2,
+                'depth': mean_depth,
+                'rect': rect
+            })
+    
+    if not contour_features:
+        print("No contours found!")
+        table_contours = []
+        
+    # Filter: keep only objects that match table size
+    table_contours = []
+    
+    
+    for feat in contour_features:
+        dim1_diff = abs(feat['dim1'] - TABLE_WIDTH) / TABLE_WIDTH
+        dim2_diff = abs(feat['dim2'] - TABLE_LENGTH) / TABLE_LENGTH
+        dim1_match = dim1_diff < SIZE_TOLERANCE
+        dim2_match = dim2_diff < SIZE_TOLERANCE
+        
+        # Only accept if size AND depth match (more strict)
+        if dim1_match and dim2_match:
+            table_contours.append(feat['contour'])
+
+    # Create visualization using the normalized depth image (not raw float32)
+    result_img = cv2.cvtColor(depth_normalized.astype(np.uint8), cv2.COLOR_GRAY2BGR)
+    
+    tables_info = []
+    for i, contour in enumerate(table_contours):
+        # Fit minimum area rectangle
+        rect = cv2.minAreaRect(contour)
+        box = cv2.boxPoints(rect)
+        box = np.intp(box)
+        
+        # Get rectangle info
+        (cx, cy), (w, h), angle = rect
+        area = cv2.contourArea(contour)
+        
+        # Draw contour and bounding box
+        color = (0, 255, 0)
+        cv2.drawContours(result_img, [box], 0, color, 2)
+        cv2.drawContours(result_img, [contour], 0, (255, 0, 0), 1)
+        
+        # label
+        label = f"Table {i+1}"
+        cv2.putText(result_img, label, (int(cx), int(cy)), 
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+        
+        # Calculate waypoints around the table perimeter
+        waypoints_pixel = []
+        num_waypoints = 8
+        for j in range(num_waypoints):
+            t = j / num_waypoints
+            if t < 0.25:
+                s = t / 0.25
+                point = box[0] + s * (box[1] - box[0])
+            elif t < 0.5:
+                s = (t - 0.25) / 0.25
+                point = box[1] + s * (box[2] - box[1])
+            elif t < 0.75:
+                s = (t - 0.5) / 0.25
+                point = box[2] + s * (box[3] - box[2])
+            else:
+                s = (t - 0.75) / 0.25
+                point = box[3] + s * (box[0] - box[3])
+            
+            waypoints_pixel.append(point)
+            cv2.circle(result_img, tuple(point.astype(int)), 3, (0, 255, 255), -1)
+        
+        tables_info.append({
+            'id': i + 1,
+            'center': (cx, cy),
+            'size': (w, h),
+            'angle': angle,
+            'area': area,
+            'box_corners': box,
+            'waypoints': waypoints_pixel
+        })
+        
+        # print(f"\n   Table {i+1}:")
+        # print(f"      Center: ({cx:.1f}, {cy:.1f}) pixels")
+        # print(f"      Size: {w:.1f} x {h:.1f} pixels")
+        # print(f"      Angle: {angle:.1f}°")
+        # print(f"      Area: {area:.0f} pixels²")
+    
+    # Table detection result
+    output_path = Path("/workspaces/robman-final-proj/table_detection.jpg")
+    cv2.imwrite(str(output_path), result_img)
+    print(f"\nDetection result saved to: {output_path}")
+    
+    return tables_info

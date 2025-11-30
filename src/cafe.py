@@ -20,9 +20,8 @@ from pydrake.systems.primitives import ConstantVectorSource
 from pydrake.geometry import MeshcatVisualizer, MeshcatVisualizerParams, MakeRenderEngineVtk, RenderEngineVtkParams
 
 from pydrake.multibody.parsing import ProcessModelDirectives, ModelDirectives
-from PIL import Image
 from manipulation import running_as_notebook
-from manipulation.station import LoadScenario, MakeHardwareStation, AddPointClouds
+from manipulation.station import LoadScenario
 
 from cameras import add_cameras, get_depth
 
@@ -85,8 +84,8 @@ initial_positions_plate = [
 ]
 
 initial_base_pose = np.array([
-    1.0, 0.0, 0.0, 0.0,  # identity quaternion
-    1.4, 0.0, 0.4         # position from scenario
+    -1.0, 0.0, 0.0, 0.0,  # identity quaternion
+    -3.5, 3.5, 0.4         # position from scenario
 ])
 
 robot_body_initial = RigidTransform(
@@ -169,5 +168,5 @@ if running_as_notebook:
 
 meshcat.StartRecording()
 # simulator.AdvanceTo(500.0)
-time.sleep(30.0)
+time.sleep(10.0)
 # meshcat.PublishRecording() #turning this on terminates or smthn, idk
