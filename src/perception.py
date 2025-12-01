@@ -2,6 +2,7 @@ from pydrake.systems.sensors import RgbdSensor, CameraInfo, PixelType
 from pydrake.geometry import DepthRenderCamera, RenderCameraCore, ColorRenderCamera, ClippingRange, DepthRange
 from pydrake.perception import DepthImageToPointCloud
 from pydrake.math import RigidTransform
+from pydrake.all import PointCloud
 import numpy as np
 from pathlib import Path
 from PIL import Image
@@ -14,10 +15,21 @@ TABLE_LENGTH = 66
 TABLE_DEPTH = 11.248
 SIZE_TOLERANCE = 0.07
 
-CROP_X_START = 89  # left edge
+CROP_X_START = 80  # left edge
 CROP_Y_START = 0   # top edge
 CROP_X_END = 560    # right edge
 CROP_Y_END = 480    # bottom edge
+
+
+def remove_table_points(point_cloud: PointCloud) -> PointCloud:
+    xyz_points = point_cloud.xyzs()
+    z_coordinates = xyz_points[2, :] 
+    above_table_mask = z_coordinates > 1    
+    keep_indices = np.where(above_table_mask)[0]    
+    filtered_xyz = xyz_points[:, keep_indices]    
+    filtered_point_cloud = PointCloud(filtered_xyz.shape[1])
+    filtered_point_cloud.mutable_xyzs()[:] = filtered_xyz
+    return filtered_point_cloud
 
 def add_cameras(builder, plant, scene_graph, scenario):
     rgbd_sensors = {}

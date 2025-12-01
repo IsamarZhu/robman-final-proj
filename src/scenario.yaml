@@ -105,9 +105,15 @@ directives:
     parent: iiwa_arm::iiwa_link_7
     child: wsg_arm::body
     X_PC:
-        translation: [0, 0, 0.09]
+        translation: [0, 0, 0.09    ]
         rotation: !Rpy { deg: [90, 0, 0]}
-
+- add_model:
+    name: mug4
+    file: file:///workspaces/robman-final-proj/assets/mug/mug.sdf
+    default_free_body_pose:
+      base_link:
+        translation: [0.775, -0.42, 1.07]
+        rotation: !Rpy { deg: [0, 0, 90] } # rotate handle away from gripper
 
 
 
