@@ -24,6 +24,7 @@ from manipulation import running_as_notebook
 from manipulation.station import LoadScenario
 
 from perception import add_cameras, get_depth
+from pid_controller import PIDController, StaticPositionController
 
 
 if running_as_notebook:
@@ -56,7 +57,6 @@ plant.Finalize()
 renderer_name = "renderer"
 scene_graph.AddRenderer(renderer_name, MakeRenderEngineVtk(RenderEngineVtkParams()))
 
-
 visualizer = MeshcatVisualizer.AddToBuilder(
     builder, scene_graph, meshcat,
     MeshcatVisualizerParams()
@@ -64,7 +64,8 @@ visualizer = MeshcatVisualizer.AddToBuilder(
 
 add_cameras(builder, plant, scene_graph, scenario)
 
-initial_positions_arm = [
+# Initial positions
+initial_positions_arm = np.array([
     -1.57,  # joint 1
     0.9,    # joint 2
     0,      # joint 3
@@ -72,20 +73,21 @@ initial_positions_arm = [
     0,      # joint 5
     1.6,    # joint 6
     0       # joint 7
-]
-initial_positions_plate = [
+])
+
+initial_positions_plate = np.array([
     -1.57,  # joint 1
-    -1.5,    # joint 2
+    -1.5,   # joint 2
     0,      # joint 3
-    0.9,   # joint 4
+    0.9,    # joint 4
     0,      # joint 5
-    -1.2,    # joint 6
-    0.3       # joint 7
-]
+    -1.2,   # joint 6
+    0.3     # joint 7
+])
 
 initial_base_pose = np.array([
     -1.0, 0.0, 0.0, 0.0,  # identity quaternion
-    -3.5, 3.5, 0.8         # position from scenario
+    1.4, 0, 0.8         # position from scenario
 ])
 
 robot_body_initial = RigidTransform(
@@ -93,26 +95,56 @@ robot_body_initial = RigidTransform(
     initial_base_pose[4:]
 )
 
-# currently making both arms be held to the same initial position
-position_arm_source = builder.AddSystem(ConstantVectorSource(initial_positions_arm))
-builder.Connect(
-    position_arm_source.get_output_port(),
-    plant.get_actuation_input_port(iiwa_arm_instance)
+# PID Controller gains for the arm (tuned for good performance)
+kp_arm = 200.0
+kd_arm = 50.0
+ki_arm = 2.0
 
+# Create PID controller for the arm
+# You can change q_desired_arm to move the arm to different positions
+q_desired_arm = initial_positions_arm  # Start at initial position
+arm_controller = builder.AddSystem(
+    PIDController(kp=kp_arm, kd=kd_arm, ki=ki_arm, q_desired=q_desired_arm)
 )
-position_plate_source = builder.AddSystem(ConstantVectorSource(initial_positions_plate))
+
+# Connect arm controller
 builder.Connect(
-    position_plate_source.get_output_port(),
+    plant.get_state_output_port(iiwa_arm_instance),
+    arm_controller.input_port
+)
+builder.Connect(
+    arm_controller.output_port,
+    plant.get_actuation_input_port(iiwa_arm_instance)
+)
+
+# PID controller for the plate arm (needs integral term to compensate for gravity)
+# Higher integral gain because it's fighting against the plate's weight
+kp_plate = 300.0
+kd_plate = 80.0
+ki_plate = 55.0  # Higher Ki to compensate for steady gravitational load
+
+plate_controller = builder.AddSystem(
+    PIDController(kp=kp_plate, kd=kd_plate, ki=ki_plate, q_desired=initial_positions_plate)
+)
+
+# Connect plate controller
+builder.Connect(
+    plant.get_state_output_port(iiwa_plate_instance),
+    plate_controller.input_port
+)
+builder.Connect(
+    plate_controller.output_port,
     plant.get_actuation_input_port(iiwa_plate_instance)
 )
 
-wsg_arm_source = builder.AddSystem(ConstantVectorSource([0.1, 0.1])) # open both fingers slightly
+# WSG gripper sources (constant for now)
+wsg_arm_source = builder.AddSystem(ConstantVectorSource([0.1, 0.1]))  # open both fingers slightly
 builder.Connect(
     wsg_arm_source.get_output_port(),
     plant.get_actuation_input_port(wsg_arm_instance)
 )
 
-wsg_plate_source = builder.AddSystem(ConstantVectorSource([0.0, 0.0])) # the grippers are gripping
+wsg_plate_source = builder.AddSystem(ConstantVectorSource([0.0, 0.0]))  # grippers are gripping
 builder.Connect(
     wsg_plate_source.get_output_port(),
     plant.get_actuation_input_port(wsg_plate_instance)
@@ -123,6 +155,7 @@ simulator = Simulator(diagram)
 context = simulator.get_mutable_context()
 plant_context = plant.GetMyMutableContextFromRoot(context)
 
+# Set initial conditions
 robot_base_body = plant.GetBodyByName("robot_base_link", robot_base_instance)
 X_initial = RigidTransform(
     RotationMatrix(Quaternion(wxyz=initial_base_pose[:4])),
@@ -134,13 +167,15 @@ plant.SetFreeBodySpatialVelocity(robot_base_body, zero_vel, plant_context)
 
 plant.SetPositions(plant_context, iiwa_arm_instance, initial_positions_arm)
 plant.SetPositions(plant_context, iiwa_plate_instance, initial_positions_plate)
+# Set velocities to zero to start from rest
+plant.SetVelocities(plant_context, iiwa_arm_instance, np.zeros(7))
+plant.SetVelocities(plant_context, iiwa_plate_instance, np.zeros(7))
 
 diagram.ForcedPublish(context)
 
 tables = get_depth(diagram, context)
 
-
-# generating the pointcloud
+# Generating the pointcloud
 camera0_point_cloud = diagram.GetOutputPort("camera_point_cloud0").Eval(context)
 camera1_point_cloud = diagram.GetOutputPort("camera_point_cloud1").Eval(context)
 camera2_point_cloud = diagram.GetOutputPort("camera_point_cloud2").Eval(context)
@@ -148,6 +183,7 @@ concatenated_pc = Concatenate([camera0_point_cloud, camera1_point_cloud, camera2
 
 voxel_size = 0.005  
 downsampled_pc = concatenated_pc.VoxelizedDownSample(voxel_size)
+
 def remove_table_points(point_cloud: PointCloud) -> PointCloud:
     xyz_points = point_cloud.xyzs()
     z_coordinates = xyz_points[2, :] 
@@ -157,8 +193,9 @@ def remove_table_points(point_cloud: PointCloud) -> PointCloud:
     filtered_point_cloud = PointCloud(filtered_xyz.shape[1])
     filtered_point_cloud.mutable_xyzs()[:] = filtered_xyz
     return filtered_point_cloud
+
 letter_point_cloud = remove_table_points(downsampled_pc)
-# izzy this is what's generating the red section of what the pointclouds are seeing, the tan is what got filtered out
+
 meshcat.SetObject(
     "letter_point_cloud", letter_point_cloud, point_size=0.05, rgba=Rgba(1, 0, 0)
 )
@@ -167,36 +204,25 @@ diagram.ForcedPublish(context)
 if running_as_notebook:
     simulator.set_target_realtime_rate(1.0)
 
-# reaction_forces = plant.get_reaction_forces_output_port().Eval(context)
-# gripper_joint_force = reaction_forces[-1]
-# print
-
-# tau_contact = plant.get_generalized_contact_forces_output_port(wsg_arm_instance).Eval(plant_context)
-
-# Extract the WSG force indexes
-# wsg_start = plant.GetJointStartIndex(wsg_arm_instance)
-# wsg_n = plant.num_velocities(wsg_arm_instance)
-# wsg_forces = tau_contact[wsg_start : wsg_start + wsg_n]
-# print(tau_contact)
-# print("WSG forces:", wsg_forces)
-# body_index = plant.GetBodyByName("left_finger", wsg_arm_instance).index()
-# F_body = plant.CalcSpatialForceInBodyFrame(plant_context, body_index)
-# weight_supported = F_body[2]
-
+# Monitor gripper contact forces
 tau_contact = plant.get_generalized_contact_forces_output_port(wsg_arm_instance).Eval(plant_context)
-
-# Sum the absolute forces on all finger joints
 total_force = np.sum(np.abs(tau_contact))
-
 print("Total gripper contact force:", total_force)
 
-# # Decide when to release
-# release_threshold = 0.01  # tune this
-# if total_force < release_threshold:
-#     wsg_open_pos = [0.1, 0.1]  # fully open fingers
-#     plant.SetPositions(plant_context, wsg_arm_instance, wsg_open_pos)
-#     print("Object released!")
+print(f"Meshcat URL: {meshcat.web_url()}")
+print("Running simulation...")
+print(f"Arm starting at: {initial_positions_arm}")
+print(f"Plate holding at: {initial_positions_plate}")
+
 meshcat.StartRecording()
-simulator.AdvanceTo(500.0)
-time.sleep(10.0)
-# meshcat.PublishRecording() #turning this on terminates or smthn, idk
+simulator.AdvanceTo(20.0)  # Run for 10 seconds to see the arm stabilize
+meshcat.StopRecording()
+meshcat.PublishRecording()
+
+print("Simulation complete!")
+print(f"Final arm position: {plant.GetPositions(plant_context, iiwa_arm_instance)}")
+print(f"Final plate position: {plant.GetPositions(plant_context, iiwa_plate_instance)}")
+
+# Example: How to change the arm's target position during runtime
+# To use this, you would need to access the controller from the diagram
+# and call: arm_controller.set_desired_position(new_target)

@@ -1,22 +1,10 @@
-import matplotlib.pyplot as plt
 import numpy as np
 from pydrake.all import (
-    AddMultibodyPlantSceneGraph,
     BasicVector,
     Context,
-    Diagram,
-    DiagramBuilder,
     LeafSystem,
-    MeshcatVisualizer,
-    ModelInstanceIndex,
-    MultibodyPlant,
-    Parser,
-    Simulator,
-    StartMeshcat,
-    VectorLogSink,
 )
 
-# from manipulation import running_as_notebook
 
 class PIDController(LeafSystem):
     """PID controller for the IIWA robot"""
@@ -29,7 +17,7 @@ class PIDController(LeafSystem):
 
         self.kp = kp
         self.kd = kd
-        self.ki = ki  # New: integral gain
+        self.ki = ki
         self.q_desired = q_desired
         self.qdot_desired = np.zeros(7)
         self.integral_error = np.zeros(7)
@@ -37,7 +25,6 @@ class PIDController(LeafSystem):
         self.prev_time = 0.0
 
     def ComputeTorque(self, context: Context, output: BasicVector) -> None:
-        # TODO: Extract state information (same as PD controller)
         iiwa_state = self.input_port.Eval(context)
         q = iiwa_state[:7]
         qdot = iiwa_state[7:]
@@ -45,20 +32,47 @@ class PIDController(LeafSystem):
         current_time = context.get_time()
         dt = current_time - self.prev_time
 
-        # TODO: Compute position and velocity errors (same as PD controller)
+        # Compute position and velocity errors
         position_error = self.q_desired - q
         velocity_error = self.qdot_desired - qdot
 
-        # TODO: Update integral error
+        # Update integral error
         if dt > 0:  # Avoid division by zero on first call
-            # YOUR CODE HERE - update self.integral_error
             self.integral_error += position_error * dt
 
-        # TODO: Compute PID control law
-        # HINT: Combine all three terms: proportional + derivative + integral
+        # Compute PID control law
         torque = self.kp * position_error + self.kd * velocity_error + self.ki * self.integral_error
 
         # Update previous time for next iteration
         self.prev_time = current_time
+
+        output.set_value(torque)
+
+    def set_desired_position(self, q_desired: np.ndarray) -> None:
+        """Update the desired position during runtime"""
+        self.q_desired = q_desired
+        # Optionally reset integral error when changing targets to avoid windup
+        # self.integral_error = np.zeros(7)
+
+
+class StaticPositionController(LeafSystem):
+    """Simple controller that holds a fixed position"""
+
+    def __init__(self, q_desired: np.ndarray, kp: float = 500.0) -> None:
+        LeafSystem.__init__(self)
+
+        self.input_port = self.DeclareVectorInputPort("iiwa_state", 14)
+        self.output_port = self.DeclareVectorOutputPort("iiwa_torque", 7, self.ComputeTorque)
+
+        self.q_desired = q_desired
+        self.kp = kp
+
+    def ComputeTorque(self, context: Context, output: BasicVector) -> None:
+        iiwa_state = self.input_port.Eval(context)
+        q = iiwa_state[:7]
+
+        # Simple P controller with high gain to hold position
+        position_error = self.q_desired - q
+        torque = self.kp * position_error
 
         output.set_value(torque)
