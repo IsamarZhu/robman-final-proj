@@ -4,7 +4,7 @@
     <pose>0 0 0 0 0 0</pose>
     <link name="robot_base_link">
       <inertial>
-        <mass>20</mass>
+        <mass>200</mass>
         <inertia>
           <ixx>1.0</ixx>
           <ixy>0.0</ixy>
