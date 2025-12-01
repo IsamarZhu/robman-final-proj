@@ -64,32 +64,32 @@ directives:
       base_link:
         translation: [0.8, -0.1, 1.1]
         rotation: !Rpy { deg: [0, 0, 90] } # rotate handle away from gripper
-- add_model:
-    name: mug2
-    file: file:///workspaces/robman-final-proj/assets/mug/mug.sdf
-    default_free_body_pose:
-      base_link:
-        translation: [0.95, -0.1, 1.1]
-        rotation: !Rpy { deg: [0, 0, 90] } # rotate handle away from gripper
-- add_model:
-    name: mug3
-    file: file:///workspaces/robman-final-proj/assets/mug/mug.sdf
-    default_free_body_pose:
-      base_link:
-        translation: [0.95, 0.05, 1.1]
-        rotation: !Rpy { deg: [0, 0, 90] } # rotate handle away from gripper
+# - add_model:
+#     name: mug2
+#     file: file:///workspaces/robman-final-proj/assets/mug/mug.sdf
+#     default_free_body_pose:
+#       base_link:
+#         translation: [0.95, -0.1, 1.1]
+#         rotation: !Rpy { deg: [0, 0, 90] } # rotate handle away from gripper
+# - add_model:
+#     name: mug3
+#     file: file:///workspaces/robman-final-proj/assets/mug/mug.sdf
+#     default_free_body_pose:
+#       base_link:
+#         translation: [0.95, 0.05, 1.1]
+#         rotation: !Rpy { deg: [0, 0, 90] } # rotate handle away from gripper
 
 # kuka iiwa information
 - add_model:
     name: iiwa_arm
     file: package://drake_models/iiwa_description/sdf/iiwa7_no_collision.sdf
     default_joint_positions:
-        iiwa_joint_1: [-1.1]
+        iiwa_joint_1: [-1.2]
         iiwa_joint_2: [0.1]
         iiwa_joint_3: [0]
         iiwa_joint_4: [-0.9]
         iiwa_joint_5: [0.6]
-        iiwa_joint_6: [1.2]
+        iiwa_joint_6: [1.7]
         iiwa_joint_7: [0]
 - add_weld:
     parent: robot_base::robot_base_link
@@ -171,7 +171,7 @@ directives:
     name: camera0_origin
     X_PF:
         base_frame: tray::tray_link
-        rotation: !Rpy { deg: [-40.0, 0.0, 120.0]}
+        rotation: !Rpy { deg: [-40.0, 0.0, 105.0]}
         translation: [0.2, 0.1, -.2]
 - add_model:
     name: camera0
@@ -184,8 +184,8 @@ directives:
     name: camera1_origin
     X_PF:
         base_frame: tray::tray_link
-        rotation: !Rpy { deg: [-40.0, 0.0, 210.0]}
-        translation: [-0.1, 0.2, -.2]
+        rotation: !Rpy { deg: [-40.0, 0.0, 180.0]}
+        translation: [-0.1, 0.27, -.2]
 - add_model:
     name: camera1
     file: package://manipulation/camera_box.sdf
@@ -197,7 +197,7 @@ directives:
     name: camera2_origin
     X_PF:
         base_frame: tray::tray_link
-        rotation: !Rpy { deg: [-40.0, 0.0, 300.0]}
+        rotation: !Rpy { deg: [-47.0, 0.0, 330.0]}
         translation: [-0.3, -0.2, -.2]
 - add_model:
     name: camera2

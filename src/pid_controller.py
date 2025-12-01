@@ -51,28 +51,5 @@ class PIDController(LeafSystem):
     def set_desired_position(self, q_desired: np.ndarray) -> None:
         """Update the desired position during runtime"""
         self.q_desired = q_desired
-        # Optionally reset integral error when changing targets to avoid windup
-        # self.integral_error = np.zeros(7)
-
-
-class StaticPositionController(LeafSystem):
-    """Simple controller that holds a fixed position"""
-
-    def __init__(self, q_desired: np.ndarray, kp: float = 500.0) -> None:
-        LeafSystem.__init__(self)
-
-        self.input_port = self.DeclareVectorInputPort("iiwa_state", 14)
-        self.output_port = self.DeclareVectorOutputPort("iiwa_torque", 7, self.ComputeTorque)
-
-        self.q_desired = q_desired
-        self.kp = kp
-
-    def ComputeTorque(self, context: Context, output: BasicVector) -> None:
-        iiwa_state = self.input_port.Eval(context)
-        q = iiwa_state[:7]
-
-        # Simple P controller with high gain to hold position
-        position_error = self.q_desired - q
-        torque = self.kp * position_error
-
-        output.set_value(torque)
+        # reset integral error when changing targets to avoid windup
+        self.integral_error = np.zeros(7)
