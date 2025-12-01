@@ -62,7 +62,7 @@ add_cameras(builder, plant, scene_graph, scenario)
 
 
 # setting intial positions for the robot arms
-initial_positions_arm = np.array([-1.57, 0.9, 0, -0.9, 0, 1.6, 0])
+initial_positions_arm = np.array([-1.1, 1.6, 0, -0.9, 0.6, 1.2, 0])
 initial_positions_plate = np.array([-1.57, -1.5, 0, 0.9, 0, -1.2, 0.3])
 
 
@@ -76,19 +76,19 @@ builder.Connect(plant.get_state_output_port(iiwa_arm_instance),arm_controller.in
 builder.Connect(arm_controller.output_port,plant.get_actuation_input_port(iiwa_arm_instance))
 
 # pid controller for the plate arm (needs integral term to compensate for gravity + plate)
-kp_plate = 300.0
-kd_plate = 80.0
-ki_plate = 55.0 
-plate_controller = builder.AddSystem(PIDController(kp=kp_plate, kd=kd_plate, ki=ki_plate, q_desired=initial_positions_plate))
-# Connect plate controller
-builder.Connect(
-    plant.get_state_output_port(iiwa_plate_instance),
-    plate_controller.input_port
-)
-builder.Connect(
-    plate_controller.output_port,
-    plant.get_actuation_input_port(iiwa_plate_instance)
-)
+# kp_plate = 300.0
+# kd_plate = 80.0
+# ki_plate = 55.0 
+# plate_controller = builder.AddSystem(PIDController(kp=kp_plate, kd=kd_plate, ki=ki_plate, q_desired=initial_positions_plate))
+# # Connect plate controller
+# builder.Connect(
+#     plant.get_state_output_port(iiwa_plate_instance),
+#     plate_controller.input_port
+# )
+# builder.Connect(
+#     plate_controller.output_port,
+#     plant.get_actuation_input_port(iiwa_plate_instance)
+# )
 
 
 
@@ -118,6 +118,10 @@ plant.SetVelocities(plant_context, iiwa_arm_instance, np.zeros(7))
 plant.SetVelocities(plant_context, iiwa_plate_instance, np.zeros(7))
 # plant.SetPositions(plant_context, wsg_arm_instance, np.array([opened, opened]))
 
+for i in range(1, 8):
+    joint = plant.GetJointByName(f"iiwa_joint_{i}", iiwa_plate_instance)
+    joint.Lock(plant_context)
+    
 diagram.ForcedPublish(context)
 tables = get_depth(diagram, context)
 
@@ -129,7 +133,7 @@ concatenated_pc = Concatenate([camera0_point_cloud, camera1_point_cloud, camera2
 voxel_size = 0.005  
 downsampled_pc = concatenated_pc.VoxelizedDownSample(voxel_size)
 letter_point_cloud = remove_table_points(downsampled_pc)
-meshcat.SetObject("letter_point_cloud", letter_point_cloud, point_size=0.05, rgba=Rgba(1, 0, 0))
+# meshcat.SetObject("letter_point_cloud", letter_point_cloud, point_size=0.05, rgba=Rgba(1, 0, 0))
 diagram.ForcedPublish(context)
 
 if running_as_notebook:

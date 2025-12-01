@@ -84,19 +84,19 @@ directives:
     name: iiwa_arm
     file: package://drake_models/iiwa_description/sdf/iiwa7_no_collision.sdf
     default_joint_positions:
-        iiwa_joint_1: [-1.57]
+        iiwa_joint_1: [-1.1]
         iiwa_joint_2: [0.1]
         iiwa_joint_3: [0]
         iiwa_joint_4: [-0.9]
-        iiwa_joint_5: [0]
-        iiwa_joint_6: [1.6]
+        iiwa_joint_5: [0.6]
+        iiwa_joint_6: [1.2]
         iiwa_joint_7: [0]
 - add_weld:
     parent: robot_base::robot_base_link
     child: iiwa_arm::iiwa_link_0
     X_PC:
-        translation: [0, -0.2, 0.25]
-        rotation: !Rpy { deg: [-90, 90, 180]}
+        translation: [-0.1, -0.2, 0.25]
+        rotation: !Rpy { deg: [-90, 0, 180]}
         
 - add_model:
     name: wsg_arm
@@ -107,13 +107,13 @@ directives:
     X_PC:
         translation: [0, 0, 0.09    ]
         rotation: !Rpy { deg: [90, 0, 0]}
-- add_model:
-    name: mug4
-    file: file:///workspaces/robman-final-proj/assets/mug/mug.sdf
-    default_free_body_pose:
-      base_link:
-        translation: [0.775, -0.42, 1.07]
-        rotation: !Rpy { deg: [0, 0, 90] } # rotate handle away from gripper
+# - add_model:
+#     name: mug4
+#     file: file:///workspaces/robman-final-proj/assets/mug/mug.sdf
+#     default_free_body_pose:
+#       base_link:
+#         translation: [0.775, -0.42, 1.07]
+#         rotation: !Rpy { deg: [0, 0, 90] } # rotate handle away from gripper
 
 
 

@@ -41,9 +41,7 @@ from pid_controller import PIDController, StaticPositionController
 # --------------------------------------------------------------------------- #
 
 SCENARIO_PATH = Path("/workspaces/robman-final-proj/src/scenario.yaml")
-MUG_MESH_PATH = Path(
-    "/workspaces/robman-final-proj/assets/mug/google_16k/textured.obj"
-)
+MUG_MESH_PATH = Path("/workspaces/robman-final-proj/assets/mug/google_16k/textured.obj")
 VOXEL_SIZE = 0.005
 TABLE_Z_THRESHOLD = 1.0
 N_SAMPLE_POINTS = 1500
@@ -92,26 +90,10 @@ add_cameras(builder, plant, scene_graph, scenario)
 # Initial conditions and controllers
 # --------------------------------------------------------------------------- #
 
-initial_positions_arm = np.array([
-    -1.57,  # joint 1
-    0.9,    # joint 2
-    0,      # joint 3
-    -0.9,   # joint 4
-    0,      # joint 5
-    1.6,    # joint 6
-    0       # joint 7
-])
+initial_positions_arm = np.array([-1.57, 0.9, 0, -0.9, 0, 1.6, 0])
+initial_positions_plate = np.array([-1.57, -1.5, 0, 0.9, 0, -1.2, 0.3])
 
-initial_positions_plate = np.array([
-    -1.57,  # joint 1
-    -1.5,   # joint 2
-    0,      # joint 3
-    0.9,    # joint 4
-    0,      # joint 5
-    -1.2,   # joint 6
-    0.3     # joint 7
-])
-
+# pid controller for the arm
 initial_base_pose = np.array([
     -1.0, 0.0, 0.0, 0.0,  # quaternion
     1.4, 0.0, 0.8         # position of robot_base
@@ -122,24 +104,15 @@ robot_body_initial = RigidTransform(
     initial_base_pose[4:]
 )
 
-# PID Controller gains for the free arm
+# pid controller for the arm
 kp_arm = 200.0
 kd_arm = 50.0
 ki_arm = 2.0
+q_desired_arm = initial_positions_arm
+arm_controller = builder.AddSystem(PIDController(kp=kp_arm, kd=kd_arm, ki=ki_arm, q_desired=q_desired_arm))
+builder.Connect(plant.get_state_output_port(iiwa_arm_instance),arm_controller.input_port)
+builder.Connect(arm_controller.output_port,plant.get_actuation_input_port(iiwa_arm_instance))
 
-# PID controller for iiwa_arm (this is the one we’ll move via q_desired)
-q_desired_arm = initial_positions_arm.copy()
-arm_controller = builder.AddSystem(
-    PIDController(kp=kp_arm, kd=kd_arm, ki=ki_arm, q_desired=q_desired_arm)
-)
-builder.Connect(
-    plant.get_state_output_port(iiwa_arm_instance),
-    arm_controller.input_port,
-)
-builder.Connect(
-    arm_controller.output_port,
-    plant.get_actuation_input_port(iiwa_arm_instance),
-)
 
 # # ---- Plate arm: make it just “hold” a fixed pose (no PIDController) ----
 # # plate_controller = builder.AddSystem(
@@ -191,12 +164,6 @@ builder.Connect(
     plant.get_actuation_input_port(wsg_arm_instance),
 )
 
-# def freeze_plate():
-#     # Force the plate arm to stay at the initial joint config, with zero velocity
-#     plant.SetPositions(plant_context, iiwa_plate_instance, initial_positions_plate)
-#     plant.SetVelocities(plant_context, iiwa_plate_instance, np.zeros(7))
-
-
 # --------------------------------------------------------------------------- #
 # Build diagram and set initial state
 # --------------------------------------------------------------------------- #
@@ -216,7 +183,7 @@ plant.SetPositions(plant_context, iiwa_plate_instance, initial_positions_plate)
 plant.SetVelocities(plant_context, iiwa_arm_instance, np.zeros(7))
 plant.SetVelocities(plant_context, iiwa_plate_instance, np.zeros(7))
 
-# Lock all joints of the plate iiwa at their current (initial) configuration
+# lock all joints of the plate iiwa at their current (initial) configuration
 for i in range(1, 8):
     joint = plant.GetJointByName(f"iiwa_joint_{i}", iiwa_plate_instance)
     joint.Lock(plant_context)
@@ -382,21 +349,11 @@ def estimate_mug_pose_icp(meshcat, rim_pc: PointCloud):
         raise RuntimeError("estimate_mug_pose_icp: rim_pc has no points!")
 
     # Load mug model points in mug frame
-    if MUG_MESH_PATH.is_file():
-        mug_mesh = trimesh.load(str(MUG_MESH_PATH), force="mesh")
-        pts = mug_mesh.sample(N_SAMPLE_POINTS)   # (N, 3)
-        p_Om = pts.T                             # (3, N)
-        print(f"Loaded mug mesh from {MUG_MESH_PATH}")
-    else:
-        print(f"WARNING: {MUG_MESH_PATH} not found; using cylindrical mug model.")
-        np.random.seed(0)
-        radius = 0.045
-        height = 0.09
-        theta = 2 * np.pi * np.random.rand(N_SAMPLE_POINTS)
-        z = height * np.random.rand(N_SAMPLE_POINTS)
-        x = radius * np.cos(theta)
-        y = radius * np.sin(theta)
-        p_Om = np.vstack([x, y, z])
+    # if MUG_MESH_PATH.is_file():
+    mug_mesh = trimesh.load(str(MUG_MESH_PATH), force="mesh")
+    pts = mug_mesh.sample(N_SAMPLE_POINTS)   # (N, 3)
+    p_Om = pts.T                             # (3, N)
+    print(f"Loaded mug mesh from {MUG_MESH_PATH}")
 
     # --- Build an initial guess from rim + model geometry ---
     # World rim center and top
@@ -803,11 +760,10 @@ run_pick_place(
     q_start,
 )
 
-
 meshcat.StopRecording()
 meshcat.PublishRecording()
-input("Simulation done. Press Enter to exit...")
+# input("Simulation done. Press Enter to exit...")
 
-print("Simulation complete!")
-print("Final arm position:", plant.GetPositions(plant_context, iiwa_arm_instance))
-print("Final plate position:", plant.GetPositions(plant_context, iiwa_plate_instance))
+# print("Simulation complete!")
+# print("Final arm position:", plant.GetPositions(plant_context, iiwa_arm_instance))
+# print("Final plate position:", plant.GetPositions(plant_context, iiwa_plate_instance))
