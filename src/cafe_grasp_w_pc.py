@@ -118,7 +118,7 @@ def build_scene(meshcat):
     robot_base_instance = plant.GetModelInstanceByName("robot_base")
     initial_base_pose = np.array([
         1.0, 0.0, 0.0, 0.0,  # identity quaternion
-        1.4, 0.0, 0.4
+        1.4, 0.0, 0.8
     ])
     robot_body_initial = RigidTransform(
         RotationMatrix(Quaternion(wxyz=initial_base_pose[:4])),
@@ -211,6 +211,7 @@ def build_scene(meshcat):
 
     return (
         diagram,
+        simulator,
         context,
         plant,
         plant_context,
@@ -495,6 +496,7 @@ if __name__ == "__main__":
     # Build scene (single plant for perception + IK)
     (
         diagram,
+        simulator,
         context,
         plant,
         plant_context,
@@ -525,7 +527,7 @@ if __name__ == "__main__":
         X_WM_hat,
         mug_top_z,
     )
-
+    simulator.AdvanceTo(5.0)
     meshcat.PublishRecording()
     input("Simulation done. Press Enter to exit...")
     print("Done.")

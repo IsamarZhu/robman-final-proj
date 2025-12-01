@@ -62,21 +62,21 @@ directives:
     file: file:///workspaces/robman-final-proj/assets/mug/mug.sdf
     default_free_body_pose:
       base_link:
-        translation: [0.8, -0.1, 1]
+        translation: [0.8, -0.1, 1.1]
         rotation: !Rpy { deg: [0, 0, 90] } # rotate handle away from gripper
 - add_model:
     name: mug2
     file: file:///workspaces/robman-final-proj/assets/mug/mug.sdf
     default_free_body_pose:
       base_link:
-        translation: [0.95, -0.1, 1]
+        translation: [0.95, -0.1, 1.1]
         rotation: !Rpy { deg: [0, 0, 90] } # rotate handle away from gripper
 - add_model:
     name: mug3
     file: file:///workspaces/robman-final-proj/assets/mug/mug.sdf
     default_free_body_pose:
       base_link:
-        translation: [0.95, 0.05, 1]
+        translation: [0.95, 0.05, 1.1]
         rotation: !Rpy { deg: [0, 0, 90] } # rotate handle away from gripper
 
 # kuka iiwa information
