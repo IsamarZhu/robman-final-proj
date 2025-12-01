@@ -85,7 +85,7 @@ initial_positions_plate = [
 
 initial_base_pose = np.array([
     -1.0, 0.0, 0.0, 0.0,  # identity quaternion
-    -3.5, 3.5, 0.4         # position from scenario
+    -3.5, 3.5, 0.8         # position from scenario
 ])
 
 robot_body_initial = RigidTransform(
@@ -167,7 +167,36 @@ diagram.ForcedPublish(context)
 if running_as_notebook:
     simulator.set_target_realtime_rate(1.0)
 
+# reaction_forces = plant.get_reaction_forces_output_port().Eval(context)
+# gripper_joint_force = reaction_forces[-1]
+# print
+
+# tau_contact = plant.get_generalized_contact_forces_output_port(wsg_arm_instance).Eval(plant_context)
+
+# Extract the WSG force indexes
+# wsg_start = plant.GetJointStartIndex(wsg_arm_instance)
+# wsg_n = plant.num_velocities(wsg_arm_instance)
+# wsg_forces = tau_contact[wsg_start : wsg_start + wsg_n]
+# print(tau_contact)
+# print("WSG forces:", wsg_forces)
+# body_index = plant.GetBodyByName("left_finger", wsg_arm_instance).index()
+# F_body = plant.CalcSpatialForceInBodyFrame(plant_context, body_index)
+# weight_supported = F_body[2]
+
+tau_contact = plant.get_generalized_contact_forces_output_port(wsg_arm_instance).Eval(plant_context)
+
+# Sum the absolute forces on all finger joints
+total_force = np.sum(np.abs(tau_contact))
+
+print("Total gripper contact force:", total_force)
+
+# # Decide when to release
+# release_threshold = 0.01  # tune this
+# if total_force < release_threshold:
+#     wsg_open_pos = [0.1, 0.1]  # fully open fingers
+#     plant.SetPositions(plant_context, wsg_arm_instance, wsg_open_pos)
+#     print("Object released!")
 meshcat.StartRecording()
-# simulator.AdvanceTo(500.0)
+simulator.AdvanceTo(500.0)
 time.sleep(10.0)
 # meshcat.PublishRecording() #turning this on terminates or smthn, idk
