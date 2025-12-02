@@ -33,7 +33,7 @@ from manipulation.icp import IterativeClosestPoint
 from manipulation.station import LoadScenario
 
 # Your helper module
-from perception import add_cameras, get_depth
+from perception import add_cameras, perceive_tables
 
 # --------------------------------------------------------------------------- #
 # Config
@@ -230,7 +230,7 @@ def build_rim_pointcloud(meshcat, diagram, context) -> PointCloud:
     Build a rim-only point cloud using camera_point_cloud{0,1,2}.
     """
     # Optionally save RGB/depth images (your helper)
-    get_depth(diagram, context)
+    perceive_tables(diagram, context)
 
     pc0 = diagram.GetOutputPort("camera_point_cloud0").Eval(context)
     pc1 = diagram.GetOutputPort("camera_point_cloud1").Eval(context)

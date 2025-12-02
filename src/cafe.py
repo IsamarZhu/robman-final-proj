@@ -25,7 +25,7 @@ from pydrake.multibody.parsing import ProcessModelDirectives, ModelDirectives
 from manipulation import running_as_notebook
 from manipulation.station import LoadScenario
 
-from perception import add_cameras, get_depth, remove_table_points
+from perception import add_cameras, perceive_tables, remove_table_points
 from pid_controller import PIDController
 from pydrake.trajectories import PiecewisePolynomial
 from pydrake.systems.primitives import TrajectorySource
@@ -111,7 +111,7 @@ for i in range(1, 8):
     joint.Lock(plant_context)
     
 diagram.ForcedPublish(context)
-tables = get_depth(diagram, context)
+tables = perceive_tables(diagram, context)
 
 if running_as_notebook:
     simulator.set_target_realtime_rate(1.0)

@@ -33,7 +33,7 @@ from manipulation import running_as_notebook
 from manipulation.station import LoadScenario
 from manipulation.icp import IterativeClosestPoint
 
-from perception import add_cameras, get_depth
+from perception import add_cameras, perceive_tables
 from pid_controller import PIDController, StaticPositionController
 
 # --------------------------------------------------------------------------- #
@@ -278,7 +278,7 @@ def split_rim_into_mugs(rim_pc: PointCloud, k: int = 3):
 
 def build_rim_pointcloud(diagram, context) -> PointCloud:
     # Grab depth images (for debugging/plots if you want)
-    get_depth(diagram, context)
+    perceive_tables(diagram, context)
 
     pc0 = diagram.GetOutputPort("camera_point_cloud0").Eval(context)
     pc1 = diagram.GetOutputPort("camera_point_cloud1").Eval(context)

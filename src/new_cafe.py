@@ -8,13 +8,13 @@ from pydrake.all import (
     ConstantVectorSource,
 )
 from manipulation.station import LoadScenario, MakeHardwareStation
-
+from perception import perceive_tables
 
 def simulate_scenario():
     meshcat = StartMeshcat()
     scenario_file = Path("/workspaces/robman-final-proj/src/new_scenario.yaml")
     scenario = LoadScenario(filename=str(scenario_file))
-    builder = DiagramBuilder()    
+    builder = DiagramBuilder()
     station = builder.AddSystem(MakeHardwareStation(
         scenario=scenario,
         meshcat=meshcat,
@@ -49,7 +49,10 @@ def simulate_scenario():
     simulator = Simulator(diagram)
     simulator.set_target_realtime_rate(1.0)
     context = simulator.get_mutable_context()
+    station_context = station.GetMyContextFromRoot(context)
     
+    tables = perceive_tables(station, station_context)
+
     diagram.ForcedPublish(context)
     meshcat.StartRecording()
     simulator.AdvanceTo(10.0)

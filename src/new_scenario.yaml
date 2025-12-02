@@ -26,7 +26,7 @@ directives:
     parent: world
     child: table0::table_body
     X_PC:
-        translation: [0.3, 0, 0.75] # moved table closer
+        translation: [0.3, 0, 0.65] 
         rotation: !Rpy { deg: [0, 0, 0] }
 
 - add_model:
@@ -36,7 +36,7 @@ directives:
     parent: world
     child: table1::table_body
     X_PC:
-        translation: [3.6, 3.0, 0.75] # moved table closer
+        translation: [3.6, 3.0, 0.65]
         rotation: !Rpy { deg: [0, 0, 90] }
 
 - add_model:
@@ -46,7 +46,7 @@ directives:
     parent: world
     child: table2::table_body
     X_PC:
-        translation: [-2.3, -2.0, 0.75] # moved table closer
+        translation: [-2.3, -2.0, 0.65] # moved table closer
         rotation: !Rpy { deg: [0, 0, 0] }
 
 - add_model:

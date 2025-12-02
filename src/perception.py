@@ -7,9 +7,10 @@ import numpy as np
 from pathlib import Path
 from PIL import Image
 import cv2
+import sys
 
-TABLE_INTENSITY_MIN = 130
-TABLE_INTENSITY_MAX = 135
+TABLE_INTENSITY_MIN = 135
+TABLE_INTENSITY_MAX = 140
 TABLE_WIDTH = 45
 TABLE_LENGTH = 66
 TABLE_DEPTH = 11.248
@@ -107,22 +108,70 @@ def add_cameras(builder, plant, scene_graph, scenario):
         except Exception as e:
             print(f"  Warning: Could not add camera {cam_name}: {e}")
 
-def get_depth(diagram, context):
-    topview_camera_depth = diagram.GetOutputPort("topview_camera.depth_image").Eval(context)
+def pixel_to_world_topview(pixel_x, pixel_y, depth_value, camera_z=12.0, camera_fov_y=np.pi/4):
+    """
+    pixel coords to world coords for topview camera
+    """
+    actual_pixel_x = pixel_x + CROP_X_START
+    actual_pixel_y = pixel_y + CROP_Y_START
+    
+    full_img_width = 640 
+    full_img_height = 480 
+    
+    focal_length_y = (full_img_height / 2.0) / np.tan(camera_fov_y / 2.0)
+    focal_length_x = focal_length_y 
+    
+    cx = full_img_width / 2.0
+    cy = full_img_height / 2.0
+    
+    x_cam = (actual_pixel_x - cx) * depth_value / focal_length_x
+    y_cam = (actual_pixel_y - cy) * depth_value / focal_length_y
+    z_cam = depth_value
+    
+    world_x = y_cam
+    world_y = x_cam  
+    world_z = camera_z - z_cam
+    
+    return (world_x, world_y, world_z)
+
+def perceive_tables(station, station_context):
+    """
+    Perceive tables from the topview camera depth image.
+    
+    Args:
+        station: The hardware station system
+        station_context: The context for the station
+    
+    Returns:
+        List of table dictionaries with both pixel and world coordinates
+    """
+    topview_camera_depth = station.GetOutputPort("topview_camera.depth_image").Eval(station_context)
     depth_array = np.copy(topview_camera_depth.data).reshape(
         (topview_camera_depth.height(), topview_camera_depth.width())
     )
     depth_array_cropped = depth_array[CROP_Y_START:CROP_Y_END, CROP_X_START:CROP_X_END]
 
-    tables = detect_tables_from_depth(depth_array_cropped)
+    tables = detect_tables_from_img(depth_array_cropped)
+    
+    for table in tables:
+        cx_pixel, cy_pixel = table['center']
+        center_depth = depth_array_cropped[int(cy_pixel), int(cx_pixel)]
+        table['center_world'] = pixel_to_world_topview(cx_pixel, cy_pixel, center_depth)
+        w, h = table['size']
+        
+        if w > h: 
+            world_angle = np.pi / 2
+        else: 
+            world_angle = 0.0
+        
+        table['angle_radians'] = world_angle
+    
     return tables
 
-
-def detect_tables_from_depth(depth_array):
+def detect_tables_from_img(depth_array):
     """
     filter by depth intensity and then by expected size
     """
-    #Normalize depth for visualization
     depth_array_vis = np.copy(depth_array)
     max_valid_depth = 15.0
     depth_array_vis[np.isinf(depth_array_vis)] = max_valid_depth
@@ -134,10 +183,10 @@ def detect_tables_from_depth(depth_array):
     else:
         depth_normalized = np.zeros_like(depth_array_vis)
 
-    depth_image = Image.fromarray(depth_normalized.astype(np.uint8))
-    depth_output_path = Path("/workspaces/robman-final-proj/original_depth.png")
-    depth_image.save(depth_output_path)
-    print(f"Cropped depth image saved to {depth_output_path}")
+    # depth_image = Image.fromarray(depth_normalized.astype(np.uint8))
+    # depth_output_path = Path("/workspaces/robman-final-proj/original_depth.png")
+    # depth_image.save(depth_output_path)
+    # print(f"Cropped depth image saved to {depth_output_path}")
     
     thresh = np.where((depth_normalized > TABLE_INTENSITY_MIN) & (depth_normalized <= TABLE_INTENSITY_MAX), 255, 0).astype(np.uint8)
     kernel_small = np.ones((3, 3), np.uint8)
@@ -186,49 +235,36 @@ def detect_tables_from_depth(depth_array):
         if dim1_match and dim2_match:
             table_contours.append(feat['contour'])
 
-    result_img = cv2.cvtColor(depth_normalized.astype(np.uint8), cv2.COLOR_GRAY2BGR)
+    # result_img = cv2.cvtColor(depth_normalized.astype(np.uint8), cv2.COLOR_GRAY2BGR)
 
     tables_info = []
     for i, contour in enumerate(table_contours):
-        # Fit minimum area rectangle
         rect = cv2.minAreaRect(contour)
         box = cv2.boxPoints(rect)
         box = np.intp(box)
-        
-        # Get rectangle info
+
         (cx, cy), (w, h), angle = rect
         area = cv2.contourArea(contour)
+        # color = (0, 255, 0)
+
+        waypoints_pixel = [
+            (box[0] + box[1]) / 2,  # midpoint of edge 0-1
+            (box[1] + box[2]) / 2,  # midpoint of edge 1-2
+            (box[2] + box[3]) / 2,  # midpoint of edge 2-3
+            (box[3] + box[0]) / 2   # midpoint of edge 3-0
+        ]
+
+        # for debugging
+        # cv2.drawContours(result_img, [box], 0, color, 2)
+        # cv2.drawContours(result_img, [contour], 0, (255, 0, 0), 1)
         
-        # Draw contour and bounding box
-        color = (0, 255, 0)
-        cv2.drawContours(result_img, [box], 0, color, 2)
-        cv2.drawContours(result_img, [contour], 0, (255, 0, 0), 1)
+        # # label
+        # label = f"Table {i+1}"
+        # cv2.putText(result_img, label, (int(cx), int(cy)), 
+        #            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
         
-        # label
-        label = f"Table {i+1}"
-        cv2.putText(result_img, label, (int(cx), int(cy)), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-        
-        # Calculate waypoints around the table perimeter
-        waypoints_pixel = []
-        num_waypoints = 8
-        for j in range(num_waypoints):
-            t = j / num_waypoints
-            if t < 0.25:
-                s = t / 0.25
-                point = box[0] + s * (box[1] - box[0])
-            elif t < 0.5:
-                s = (t - 0.25) / 0.25
-                point = box[1] + s * (box[2] - box[1])
-            elif t < 0.75:
-                s = (t - 0.5) / 0.25
-                point = box[2] + s * (box[3] - box[2])
-            else:
-                s = (t - 0.75) / 0.25
-                point = box[3] + s * (box[0] - box[3])
-            
-            waypoints_pixel.append(point)
-            cv2.circle(result_img, tuple(point.astype(int)), 3, (0, 255, 255), -1)
+        # for point in waypoints_pixel:
+        #     cv2.circle(result_img, tuple(point.astype(int)), 3, (0, 255, 255), -1)
         
         tables_info.append({
             'id': i + 1,
@@ -239,16 +275,10 @@ def detect_tables_from_depth(depth_array):
             'box_corners': box,
             'waypoints': waypoints_pixel
         })
-        
-        # print(f"\n   Table {i+1}:")
-        # print(f"      Center: ({cx:.1f}, {cy:.1f}) pixels")
-        # print(f"      Size: {w:.1f} x {h:.1f} pixels")
-        # print(f"      Angle: {angle:.1f}°")
-        # print(f"      Area: {area:.0f} pixels²")
     
     # Table detection result
-    output_path = Path("/workspaces/robman-final-proj/table_detection.jpg")
-    cv2.imwrite(str(output_path), result_img)
-    print(f"\nDetection result saved to: {output_path}")
+    # output_path = Path("/workspaces/robman-final-proj/table_detection.jpg")
+    # cv2.imwrite(str(output_path), result_img)
+    # print(f"\nDetection result saved to: {output_path}")
     
     return tables_info
