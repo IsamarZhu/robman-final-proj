@@ -5,6 +5,7 @@ from pydrake.all import (
     StartMeshcat,
     Simulator,
     DiagramBuilder,
+    ConstantVectorSource,
 )
 from manipulation.station import LoadScenario, MakeHardwareStation
 
@@ -18,6 +19,30 @@ def simulate_scenario():
         scenario=scenario,
         meshcat=meshcat,
     ))
+    
+    # Mobile base positions (x, y, z) + 7 arm joints = 10 total
+    mobile_base_positions = [1.4, 0.0, 0.1]  # iiwa_base_x, y, z
+    arm_positions = [1.94, 0.1, 0.0, -0.9, 0.6, 1.7, 0.0]  # 7 arm joints
+    
+    all_positions = mobile_base_positions + arm_positions
+    
+    # desired_state needs positions AND velocities (20 values total)
+    # Format: [q1, ..., q10, v1, ..., v10]
+    desired_state = all_positions + [0.0] * 10  # 10 positions + 10 zero velocities
+    
+    state_source = builder.AddSystem(ConstantVectorSource(desired_state))
+    
+    builder.Connect(
+        state_source.get_output_port(),
+        station.GetInputPort("iiwa_arm.desired_state")
+    )
+    
+    # Also need to control the gripper
+    gripper_source = builder.AddSystem(ConstantVectorSource([0.1]))  # Gripper open
+    builder.Connect(
+        gripper_source.get_output_port(),
+        station.GetInputPort("wsg_arm.position")
+    )
     
     diagram = builder.Build()
     

@@ -54,7 +54,7 @@ directives:
     file: file:///workspaces/robman-final-proj/assets/mug/mug.sdf
     default_free_body_pose:
       base_link:
-        translation: [0.8, -0.1, 1.1]
+        translation: [1.4, 0.7, 0.6]
         rotation: !Rpy { deg: [0, 0, 90] } # rotate handle away from gripper
 # - add_model:
 #     name: mug2
@@ -85,7 +85,7 @@ directives:
         iiwa_joint_7: [0]
         iiwa_base_x: [1.4]
         iiwa_base_y: [0]
-        iiwa_base_z: [0]
+        iiwa_base_z: [0.1]
 
 - add_model:
     name: wsg_arm
@@ -196,8 +196,6 @@ cameras:
         z_near: 0.1
         z_far: 15.0
 
-# model_drivers:
-#     iiwa_arm: !IiwaDriver
-#       control_mode: position_only
-#       hand_model_name: wsg_arm
-#     wsg_arm: !SchunkWsgDriver {}
+model_drivers:
+    iiwa_arm: !InverseDynamicsDriver {}
+    wsg_arm: !SchunkWsgDriver {}
