@@ -386,12 +386,7 @@ def run_pick_place(meshcat, simulator, diagram, plant, plant_context,
         
 q_start = initial_positions_arm.copy()
 meshcat.StartRecording()
-run_pick_place(
-    meshcat, simulator, diagram, plant, plant_context,
-    iiwa_arm_instance, wsg_arm_instance,
-    X_WM_hat, mug_bottom_z, mug_top_z,
-    q_start,
-)
+
 ######################## icp ########################
 
 
