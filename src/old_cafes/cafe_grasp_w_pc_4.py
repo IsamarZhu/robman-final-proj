@@ -33,7 +33,7 @@ from manipulation import running_as_notebook
 from manipulation.station import LoadScenario
 from manipulation.icp import IterativeClosestPoint
 
-from perception import add_cameras, perceive_tables
+from perception import add_cameras, get_depth
 from pid_controller import PIDController, StaticPositionController
 
 # --------------------------------------------------------------------------- #
@@ -141,6 +141,42 @@ builder.Connect(
     plant.get_actuation_input_port(iiwa_arm_instance),
 )
 
+# # ---- Plate arm: make it just “hold” a fixed pose (no PIDController) ----
+# # plate_controller = builder.AddSystem(
+# #     StaticPositionController(q_desired=initial_positions_plate)
+# # )
+# # builder.Connect(
+# #     plant.get_state_output_port(iiwa_plate_instance),
+# #     plate_controller.get_input_port(0),
+# # )
+# # builder.Connect(
+# #     plate_controller.get_output_port(0),
+# #     plant.get_actuation_input_port(iiwa_plate_instance),
+# # )
+# # PID controller for the plate arm (fights gravity, keeps tray steady)
+# kp_plate = 300.0
+# kd_plate = 120.0
+# ki_plate = 100.0  # integral term handles gravity/steady load
+
+# plate_controller = builder.AddSystem(
+#     PIDController(
+#         kp=kp_plate,
+#         kd=kd_plate,
+#         ki=ki_plate,
+#         q_desired=initial_positions_plate.copy(),
+#     )
+# )
+
+# builder.Connect(
+#     plant.get_state_output_port(iiwa_plate_instance),
+#     plate_controller.input_port,
+# )
+# builder.Connect(
+#     plate_controller.output_port,
+#     plant.get_actuation_input_port(iiwa_plate_instance),
+# )
+
+
 # WSG gripper on plate stays gripping
 wsg_plate_source = builder.AddSystem(ConstantVectorSource([0.0, 0.0]))
 builder.Connect(
@@ -154,6 +190,12 @@ builder.Connect(
     wsg_arm_source.get_output_port(),
     plant.get_actuation_input_port(wsg_arm_instance),
 )
+
+# def freeze_plate():
+#     # Force the plate arm to stay at the initial joint config, with zero velocity
+#     plant.SetPositions(plant_context, iiwa_plate_instance, initial_positions_plate)
+#     plant.SetVelocities(plant_context, iiwa_plate_instance, np.zeros(7))
+
 
 # --------------------------------------------------------------------------- #
 # Build diagram and set initial state
@@ -179,8 +221,11 @@ for i in range(1, 8):
     joint = plant.GetJointByName(f"iiwa_joint_{i}", iiwa_plate_instance)
     joint.Lock(plant_context)
 
+
 q_start = initial_positions_arm.copy()
 arm_controller.set_desired_position(q_start)
+
+# plate_controller.set_desired_position(initial_positions_plate.copy())
 
 simulator.Initialize()
 simulator.AdvanceTo(0.5)   # ~0.5 s is usually enough to let mugs settle
@@ -229,7 +274,6 @@ def keep_top_rim_band(pc: PointCloud, band_thickness: float = 0.02) -> PointClou
     out.mutable_xyzs()[:] = rim_xyz
     return out
 
-
 def split_rim_into_mugs(rim_pc: PointCloud, k: int = 3):
     """
     Split rim point cloud into k clusters in (x, y).
@@ -243,25 +287,32 @@ def split_rim_into_mugs(rim_pc: PointCloud, k: int = 3):
     # Work in (x, y) only
     pts_xy = xyz[:2, :].T  # (N, 2)
 
-    # Simple K-means implementation in numpy
+    # Simple K-means implementation in numpy to avoid extra deps.
+    # (Random init, few iterations is good enough here.)
     np.random.seed(0)
+    # Initialize centroids by randomly picking k points
     indices = np.random.choice(n, k, replace=False)
     centroids = pts_xy[indices]
 
     for _ in range(15):
+        # Assign points to nearest centroid
+        # (N, k) distances
         diff = pts_xy[:, None, :] - centroids[None, :, :]
         dists = np.sum(diff**2, axis=2)
         labels = np.argmin(dists, axis=1)
 
+        # Update centroids
         new_centroids = np.zeros_like(centroids)
         for i in range(k):
             mask = (labels == i)
             if np.any(mask):
                 new_centroids[i] = pts_xy[mask].mean(axis=0)
             else:
+                # If a cluster is empty, reinitialize it
                 new_centroids[i] = pts_xy[np.random.randint(0, n)]
         centroids = new_centroids
 
+    # Build separate PointClouds
     mug_pcs = []
     for i in range(k):
         mask = (labels == i)
@@ -276,9 +327,10 @@ def split_rim_into_mugs(rim_pc: PointCloud, k: int = 3):
     return mug_pcs
 
 
+
 def build_rim_pointcloud(diagram, context) -> PointCloud:
     # Grab depth images (for debugging/plots if you want)
-    perceive_tables(diagram, context)
+    get_depth(diagram, context)
 
     pc0 = diagram.GetOutputPort("camera_point_cloud0").Eval(context)
     pc1 = diagram.GetOutputPort("camera_point_cloud1").Eval(context)
@@ -294,6 +346,7 @@ def build_rim_pointcloud(diagram, context) -> PointCloud:
 
     obj_pc = remove_table_points(down_pc, z_thresh=TABLE_Z_THRESHOLD)
     if obj_pc.xyzs().shape[1] == 0:
+        # relax if needed
         obj_pc = remove_table_points(down_pc, z_thresh=TABLE_Z_THRESHOLD - 0.1)
         if obj_pc.xyzs().shape[1] == 0:
             obj_pc = down_pc
@@ -320,23 +373,27 @@ def build_rim_pointcloud(diagram, context) -> PointCloud:
 
 
 # --------------------------------------------------------------------------- #
-# ICP on rim cloud to estimate mug pose (minimal version)
+# ICP on rim cloud to estimate mug pose
 # --------------------------------------------------------------------------- #
 
-def estimate_mug_pose_icp(meshcat, rim_pc: PointCloud):
+def estimate_mug_pose_icp(meshcat, rim_pc: PointCloud) -> (RigidTransform, float):
     """
-    Minimal ICP:
-      - Uses rim points (world) as target.
-      - Uses mug mesh (or simple cylinder) as model.
-      - Returns:
-          X_WM_hat: estimated mug pose
-          z_rim_world: max z of rim points (for grasp height)
+    Run ICP to align a mug mesh to a single mug's rim point cloud.
+
+    Args:
+        meshcat: Meshcat instance for visualization (can be None if you don't care).
+        rim_pc: PointCloud with points on ONE mug rim, expressed in world frame.
+
+    Returns:
+        X_WM_hat: RigidTransform from mug frame M to world W (estimated mug pose).
+        mug_top_z: float, max z of the rim points (for grasp height planning).
     """
-    p_Ws = rim_pc.xyzs()   # (3, N)
+    # Rim points in world frame
+    p_Ws = rim_pc.xyzs()   # shape (3, N)
     if p_Ws.shape[1] == 0:
         raise RuntimeError("estimate_mug_pose_icp: rim_pc has no points!")
 
-    # Load mug model points in mug frame
+    # --- Model points in mug frame M (p_Om) ---
     if MUG_MESH_PATH.is_file():
         mug_mesh = trimesh.load(str(MUG_MESH_PATH), force="mesh")
         pts = mug_mesh.sample(N_SAMPLE_POINTS)   # (N, 3)
@@ -351,23 +408,47 @@ def estimate_mug_pose_icp(meshcat, rim_pc: PointCloud):
         z = height * np.random.rand(N_SAMPLE_POINTS)
         x = radius * np.cos(theta)
         y = radius * np.sin(theta)
-        p_Om = np.vstack([x, y, z])
+        p_Om = np.vstack([x, y, z])             # (3, N)
 
-    # Simple initial guess: center of rim in x,y, align model top to rim z
-    center_xyz = np.mean(p_Ws, axis=1)
+    # # --- Initial guess for the mug pose in world ---
+    # # You can tweak this to be roughly near the tray/mugs
+    # initial_guess = RigidTransform(
+    #     RotationMatrix.MakeZRotation(np.deg2rad(90.0)),
+    #     [0.8, -0.1, 1.0],
+    # )
+
+    # # --- Run ICP ---
+    # X_WM_hat, cost = IterativeClosestPoint(
+    #     p_Om=p_Om,
+    #     p_Ws=p_Ws,
+    #     X_Ohat=initial_guess,
+    #     meshcat=meshcat,
+    #     meshcat_scene_path="icp/mug",
+    #     max_iterations=MAX_ICP_ITERS,
+    # )
+
+    # print("ICP cost:", cost)
+
+    # Top of this mug’s rim in world z
+    # Top of this mug’s rim in world z
+    mug_top_z = float(np.max(p_Ws[2, :]))
+
+    # Estimate mug center in x,y from rim points
+    center_xyz = np.mean(p_Ws, axis=1)   # (3,)
     center_x, center_y = center_xyz[0], center_xyz[1]
-    z_rim_world = float(np.max(p_Ws[2, :]))
 
-    model_top_z = float(np.max(p_Om[2, :]))
+    # Approx mug height (matches your cylinder fallback)
+    mug_height = 0.09
 
-    initial_translation = [
-        center_x,
-        center_y,
-        z_rim_world - model_top_z,
-    ]
-    initial_guess = RigidTransform(RotationMatrix(), initial_translation)
+    # Put model so its top (z = mug_height) is at mug_top_z
+    initial_translation = [center_x, center_y, mug_top_z - mug_height]
 
-    # Run ICP
+    # Assume mug is upright; ignore yaw (rotation around z) for now
+    initial_guess = RigidTransform(
+        RotationMatrix(),   # identity (z-up)
+        initial_translation,
+    )
+
     X_WM_hat, cost = IterativeClosestPoint(
         p_Om=p_Om,
         p_Ws=p_Ws,
@@ -376,22 +457,24 @@ def estimate_mug_pose_icp(meshcat, rim_pc: PointCloud):
         meshcat_scene_path="icp/mug",
         max_iterations=MAX_ICP_ITERS,
     )
-    print("ICP cost:", cost)
 
-    return X_WM_hat, z_rim_world
+    print("ICP cost:", cost)
+    return X_WM_hat, mug_top_z
 
 
 # --------------------------------------------------------------------------- #
-# IK + pick-and-place sequence using the PID arm controller (simplified)
+# IK + pick-and-place sequence using the PID arm controller
 # --------------------------------------------------------------------------- #
 
 def run_pick_place(meshcat, simulator, diagram, plant, plant_context,
                    iiwa_arm_instance, wsg_arm_instance,
-                   X_WM_hat: RigidTransform,
-                   mug_top_z: float,
-                   q_start=None):
+                   X_WM_hat: RigidTransform, mug_top_z: float, q_start=None):
 
     world_frame = plant.world_frame()
+
+    # ----------------------------------------------------------------------- #
+    # Frames + tray / table heights
+    # ----------------------------------------------------------------------- #
     ee_frame = plant.GetFrameByName("body", wsg_arm_instance)
 
     # Table the mug will be placed on (on the ground)
@@ -410,40 +493,69 @@ def run_pick_place(meshcat, simulator, diagram, plant, plant_context,
     tray_height = p_WTray[2]
     print("Tray height:", tray_height)
 
-    # ------------------------------------------------------------------- #
-    # IK helper (minimal)
-    # ------------------------------------------------------------------- #
+    # gripper orientation: -z aligned with world -z (top-down)
+    R_WG_desired = RotationMatrix.MakeXRotation(-np.pi / 2.0)
+
+    # mug position from ICP
+    p_WM = X_WM_hat.translation()
+
+    # Estimate mug bottom, but don't let it go below tray surface
+    mug_bottom_z = mug_top_z - 0.08          # assume ~8cm tall mug
+    mug_bottom_z = max(mug_bottom_z, tray_height + 0.005)
+
+    # ----------------------------------------------------------------------- #
+    # IK helper
+    # ----------------------------------------------------------------------- #
     def ik_for_ee_position(p_W_target,
-                           use_orientation: bool,
-                           theta_bound: float = 1.0):
+                       use_orientation: bool,
+                       theta_bound: float = 1.0,
+                       clamp_to_tray: bool = True):
         ik = InverseKinematics(plant, plant_context)
         q = ik.q()
 
         world_frame = plant.world_frame()
         ee_frame = plant.GetFrameByName("body", wsg_arm_instance)
 
-        # Lock base pose
+        # lock base
         base_body = plant.GetBodyByName("robot_base_link", robot_base_instance)
         X_WB = plant.EvalBodyPoseInWorld(plant_context, base_body)
         p_WB = X_WB.translation()
-        R_WB = X_WB.rotation()
         ik.AddPositionConstraint(
             base_body.body_frame(), [0, 0, 0],
             world_frame,
             p_WB, p_WB,
         )
+        R_WB = X_WB.rotation()
         ik.AddOrientationConstraint(
             world_frame, R_WB,
             base_body.body_frame(), RotationMatrix(),
             0.0,
         )
 
-        # Simple position box around target
+        # Position constraint target
+                # Position constraint target
         p = p_W_target.copy()
-        # **Relaxed tolerance** for easier solves
-        p_tol = 0.10
-        lower = p - np.array([p_tol, p_tol, p_tol])
-        upper = p + np.array([p_tol, p_tol, p_tol])
+        if clamp_to_tray:
+            # Never let the *lower* z bound go below the tray+mug bottom
+            p[2] = max(p[2], mug_bottom_z + 0.01)
+
+        p_tol = 0.04
+
+        lower = p.copy()
+        upper = p.copy()
+
+        # x,y can move in a ± p_tol box
+        lower[0:2] = p[0:2] - p_tol
+        upper[0:2] = p[0:2] + p_tol
+
+        if clamp_to_tray:
+            # z must be ≥ p[2] (which is ≥ mug_bottom_z + 0.01)
+            lower[2] = p[2]
+            upper[2] = p[2] + p_tol
+        else:
+            # For table-side waypoints, symmetric z is fine
+            lower[2] = p[2] - p_tol
+            upper[2] = p[2] + p_tol
 
         ik.AddPositionConstraint(
             ee_frame, [0, 0, 0],
@@ -452,8 +564,8 @@ def run_pick_place(meshcat, simulator, diagram, plant, plant_context,
             upper,
         )
 
+
         if use_orientation:
-            R_WG_desired = RotationMatrix.MakeXRotation(-np.pi / 2.0)
             ik.AddOrientationConstraint(
                 world_frame,
                 R_WG_desired,
@@ -467,82 +579,104 @@ def run_pick_place(meshcat, simulator, diagram, plant, plant_context,
         prog.SetInitialGuess(q, q_seed)
 
         result = Solve(prog)
-        print(f"IK target {p_W_target}, success={result.is_success()}")
-
+        print(f"IK target (raw) {p_W_target}, (used) {p}, clamp_to_tray={clamp_to_tray}")
+        
         if not result.is_success():
-            raise RuntimeError(f"IK failed for target {p_W_target}")
+            raise RuntimeError(f"IK failed for target {p_W_target} (clamped {p})")
+        
+        
+
 
         q_sol = result.GetSolution(q)
         plant.SetPositions(plant_context, q_sol)
         return plant.GetPositions(plant_context, iiwa_arm_instance)
 
-    # ------------------------------------------------------------------- #
-    # Waypoints (simple, with global fly height)
-    # ------------------------------------------------------------------- #
-    p_WM = X_WM_hat.translation()
 
-    # Always fly well above everything
-    fly_z = max(tray_height, table_height, mug_top_z) + 0.25
-    z_grasp = mug_top_z + 0.02   # just above rim
+    # ----------------------------------------------------------------------- #
+    # Waypoints in z
+    # ----------------------------------------------------------------------- #
+    z_over_mug = mug_top_z + 0.25
+    # grasp just *below* the top, but not deep into the mug
+    z_grasp    = mug_top_z - 0.01
+    z_lift     = mug_top_z + 0.25
 
-    p_over_mug = np.array([p_WM[0], p_WM[1], fly_z])
+    p_over_mug = np.array([p_WM[0], p_WM[1], z_over_mug])
     p_grasp    = np.array([p_WM[0], p_WM[1], z_grasp])
-    p_lift     = np.array([p_WM[0], p_WM[1], fly_z])
+    p_lift     = np.array([p_WM[0], p_WM[1], z_lift])
 
-    table_height_for_place = table_height + 0.10
-    p_place_xy = np.array([0.9, -0.05])
-
+    # Place on table near robot
+    table_height_for_place = table_height + 0.05
+    p_place_xy = np.array([1.0, -0.05])
     p_over_table = np.array([
         p_place_xy[0],
         p_place_xy[1],
-        fly_z,
+        table_height_for_place + 0.20
     ])
     p_place = np.array([
         p_place_xy[0],
         p_place_xy[1],
-        table_height_for_place + 0.02,
+        table_height_for_place + 0.02
     ])
     p_retreat = p_over_table.copy()
 
-    print("tray_height:", tray_height, "table_height:", table_height)
-    print("mug_top_z:", mug_top_z)
-    print("p_over_mug:", p_over_mug)
-    print("p_grasp:", p_grasp)
-    print("p_over_table:", p_over_table, "p_place:", p_place)
-
-    # ------------------------------------------------------------------- #
-    # IK for keyframes
-    # ------------------------------------------------------------------- #
+    # ----------------------------------------------------------------------- #
+    # IK solve for keyframes
+    # ----------------------------------------------------------------------- #
     if q_start is None:
         q_start = plant.GetPositions(plant_context, iiwa_arm_instance)
 
+    # 1) Enforce top-down orientation *above* the mug
+    # Over mug / grasp / lift: clamp to tray (protect mugs)
     q_over_m = ik_for_ee_position(
         p_over_mug,
         use_orientation=True,
         theta_bound=1.0,
+        clamp_to_tray=True,
     )
 
-    # 🚨 Minimal change: DON'T solve IK for p_grasp.
-    # Just reuse the "over_mug" configuration for the grasp keyframe.
-    # This avoids infeasible IK at a tight low-z target.
-    q_grasp = q_over_m
+    # q_grasp = ik_for_ee_position(
+    #     p_grasp,
+    #     use_orientation=True,
+    #     theta_bound=0.4,
+    #     clamp_to_tray=True,
+    # )
+    
+    q_grasp = ik_for_ee_position(
+        p_grasp,
+        use_orientation=False,  # <- important
+        clamp_to_tray=True,
+    )
 
     q_lift = ik_for_ee_position(
         p_lift,
         use_orientation=False,
+        clamp_to_tray=True,
     )
+
+    # Over table / place / retreat: allow going down to table
     q_over_t = ik_for_ee_position(
         p_over_table,
         use_orientation=False,
+        clamp_to_tray=False,   # <---
     )
     q_place = ik_for_ee_position(
         p_place,
         use_orientation=False,
+        clamp_to_tray=False,   # <---
     )
     q_retreat = ik_for_ee_position(
         p_retreat,
         use_orientation=False,
+        clamp_to_tray=False,   # <---
     )
+    
+    print("tray_height:", tray_height, "table_height:", table_height)
+    print("mug_top_z:", mug_top_z, "mug_bottom_z:", mug_bottom_z)
+    print("p_over_mug:", p_over_mug)
+    print("p_grasp:", p_grasp)
+    print("p_over_table:", p_over_table, "p_place:", p_place)
+
+
 
     keyframes = [
         ("start",     q_start,   "open"),
@@ -554,9 +688,9 @@ def run_pick_place(meshcat, simulator, diagram, plant, plant_context,
         ("retreat",   q_retreat, "open"),
     ]
 
-    # ------------------------------------------------------------------- #
+    # ----------------------------------------------------------------------- #
     # Initialize arm + gripper
-    # ------------------------------------------------------------------- #
+    # ----------------------------------------------------------------------- #
     plant.SetPositions(plant_context, iiwa_arm_instance, q_start)
     plant.SetVelocities(plant_context, iiwa_arm_instance, np.zeros(7))
     arm_controller.set_desired_position(q_start)
@@ -573,9 +707,9 @@ def run_pick_place(meshcat, simulator, diagram, plant, plant_context,
     WSG_OPEN   = 0.12   # slightly > mug outer diameter
     WSG_CLOSED = 0.06   # enough to clamp the wall
 
-    # ------------------------------------------------------------------- #
+    # ----------------------------------------------------------------------- #
     # Execute keyframes
-    # ------------------------------------------------------------------- #
+    # ----------------------------------------------------------------------- #
     t = simulator.get_context().get_time()
     phase_dt = 2.0
 
@@ -613,6 +747,13 @@ def run_pick_place(meshcat, simulator, diagram, plant, plant_context,
 
 print(f"Meshcat URL: {meshcat.web_url()}")
 
+# Build rim-only cloud and ICP mug pose
+# rim_pc = build_rim_pointcloud(diagram, context)
+# X_WM_hat, mug_top_z = estimate_mug_pose_icp(meshcat, rim_pc)
+# print("Estimated mug pose:", X_WM_hat)
+# print("Estimated mug_top_z:", mug_top_z)
+
+
 rim_pc = build_rim_pointcloud(diagram, context)
 
 # Split into three mugs
@@ -628,7 +769,7 @@ for i, pc in enumerate(mug_rim_pcs):
         rgba=Rgba(1, 0, 0, 0.4),
     )
 
-# Pick which mug to grasp: e.g., the one closest to the robot base in x,y
+# Pick which mug to grasp: e.g., the one closest to the robot in x
 robot_base_body = plant.GetBodyByName("robot_base_link", robot_base_instance)
 X_WR = plant.EvalBodyPoseInWorld(plant_context, robot_base_body)
 p_WR = X_WR.translation()
@@ -642,18 +783,26 @@ chosen_idx = int(np.argmin(dists))
 chosen_rim_pc = mug_rim_pcs[chosen_idx]
 print("Chose mug cluster", chosen_idx, "for ICP")
 
-# Run ICP only on that mug's rim
-X_WM_hat, mug_top_z = estimate_mug_pose_icp(meshcat, chosen_rim_pc)
-print("Estimated mug pose:", X_WM_hat)
-print("Estimated mug_top_z (rim z):", mug_top_z)
+# Recompute mug_top_z from that one mug only
+p_Ws_chosen = chosen_rim_pc.xyzs()
+mug_top_z = float(np.max(p_Ws_chosen[2, :]))
 
-# Optional: compare to ground truth mug1 pose
+# Run ICP only on that mug's rim
+X_WM_hat, _ = estimate_mug_pose_icp(meshcat, chosen_rim_pc)
+print("Estimated mug pose:", X_WM_hat)
+print("Estimated mug_top_z (from chosen cluster):", mug_top_z)
+
+# (Optional) compare to ground truth mug pose as in step 1
+
+
+# --- Debug: compare ICP pose to ground truth mug1 pose ---
 mug1_instance = plant.GetModelInstanceByName("mug1")
 mug1_body = plant.GetBodyByName("base_link", mug1_instance)
 X_WM_true = plant.EvalBodyPoseInWorld(plant_context, mug1_body)
 print("Ground truth mug1 pose:", X_WM_true)
 print("ICP translation:", X_WM_hat.translation())
 print("True translation:", X_WM_true.translation())
+
 
 meshcat.StartRecording()
 
