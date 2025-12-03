@@ -7,6 +7,7 @@ from pydrake.all import (
     Rgba,
     RigidTransform,
     RotationMatrix,
+    PiecewisePolynomial,
 )
 from pydrake.geometry import Box
 
@@ -202,16 +203,33 @@ def pick_object(
     )
     print("  ✓ Place target pose")
 
-    # motion helper
-    def move_to(q_des, gripper_width, duration):
-        """move robot to joint configuration with specified gripper width"""
-        cmd_source.set_q_desired(q_des)
-        wsg_cmd_source.set_width(gripper_width)
-        t = simulator.get_context().get_time()
-        simulator.AdvanceTo(t + duration)
-        diagram.ForcedPublish(context)
+    # motion helper with smooth trajectory interpolation
+    def move_to_smooth(q_des, gripper_width, duration, num_steps=50):
+        """Smoothly interpolate to joint configuration with specified gripper width"""
+        q_current = plant.GetPositions(plant_context, iiwa_model)
 
-        # Monitor contact forces
+        # create smooth polynomial trajectory from current to desired
+        # using cubic interpolation with zero velocity at endpoints
+        times = [0.0, duration]
+        q_knots = np.column_stack([q_current, q_des])
+        trajectory = PiecewisePolynomial.CubicWithContinuousSecondDerivatives(
+            times, q_knots, np.zeros(len(q_current)), np.zeros(len(q_des))
+        )
+
+        wsg_cmd_source.set_width(gripper_width)
+        t_start = simulator.get_context().get_time()
+        dt = duration / num_steps
+        for i in range(num_steps + 1):
+            t_rel = i * dt  # Relative time in trajectory
+            if t_rel > duration:
+                t_rel = duration
+
+            q_interp = trajectory.value(t_rel).flatten()
+            cmd_source.set_q_desired(q_interp)
+            t_abs = t_start + t_rel
+            simulator.AdvanceTo(t_abs)
+            diagram.ForcedPublish(context)
+
         tau_contact = plant.get_generalized_contact_forces_output_port(wsg_model).Eval(plant_context)
         total_force = np.sum(np.abs(tau_contact))
         print(f"    Contact forces - Total: {total_force:.4f} N, Gripper width: {gripper_width:.4f} m")
@@ -227,28 +245,28 @@ def pick_object(
     print("\nExecuting motion...")
 
     print("1. move to start position")
-    move_to(q_start, wsg_open, move_time)
+    move_to_smooth(q_start, wsg_open, move_time)
 
     print("2. approach above object")
-    move_to(q_approach, wsg_open, move_time)
+    move_to_smooth(q_approach, wsg_open, move_time)
 
     print("3. descend to grasp position")
-    move_to(q_grasp, wsg_open, move_time)
+    move_to_smooth(q_grasp, wsg_open, move_time)
 
     print("4. close gripper to grasp")
-    move_to(q_grasp, wsg_closed, grasp_time)
+    move_to_smooth(q_grasp, wsg_closed, grasp_time)
 
     print("5. lift object (slower)")
-    move_to(q_lift, wsg_closed, lift_time)
+    move_to_smooth(q_lift, wsg_closed, lift_time)
 
     print("6. lift 10cm higher")
-    move_to(q_lift_higher, wsg_closed, lift_time)
+    move_to_smooth(q_lift_higher, wsg_closed, lift_time)
 
     print("7. move to place target")
-    move_to(q_place, wsg_closed, move_time)
+    move_to_smooth(q_place, wsg_closed, move_time)
 
     print("7.5. hold at place target to stabilize grip")
-    move_to(q_place, wsg_closed, 2.0)  # Hold for 2 seconds to stabilize
+    move_to_smooth(q_place, wsg_closed, 2.0)  # Hold for 2 seconds to stabilize
 
     # Sync plant_context with actual robot state after motion
     q_actual = plant.GetPositions(plant_context, iiwa_model)
@@ -292,10 +310,10 @@ def pick_object(
                 base_positions_to_lock=base_positions_lock,
             )
 
-            # Execute motion with tighter gripper control
+            # Execute smooth motion with tighter gripper control
             # Re-command gripper width to ensure it stays closed
             wsg_cmd_source.set_width(wsg_closed)
-            move_to(q_descent, wsg_closed, step_time)
+            move_to_smooth(q_descent, wsg_closed, step_time, num_steps=10)  # Fewer steps for faster incremental moves
 
             # Check contact forces after motion
             tau_contact = plant.get_generalized_contact_forces_output_port(wsg_model).Eval(plant_context)

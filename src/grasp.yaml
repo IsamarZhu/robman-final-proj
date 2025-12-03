@@ -61,7 +61,7 @@ directives:
 #     file: package://manipulation/hydro/009_gelatin_box.sdf
 #     default_free_body_pose:
 #       base_link_gelatin:
-#         translation: [1.45, 0.6, 0.65]
+#         translation: [1.35, 0.5, 0.65]
 #         rotation: !Rpy { deg: [-90, 0, 130] }
 # - add_model:
 #     name: mug2
