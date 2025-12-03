@@ -34,17 +34,17 @@ from manipulation.station import (
 )
 
 # Import from your segmentation module
-from perception.segmentation import (
+from perception.object_segmentation import (
     build_pointcloud,
     segment_objects_clustering,
     ObjectDetector,
 )
-
+from grasping.command_systems import JointPositionCommandSource, WsgCommandSource
 # --------------------------------------------------------------------------- #
 # Configuration
 # --------------------------------------------------------------------------- #
 
-SCENARIO_PATH = Path("/workspaces/robman-final-proj/src/new_scenario.yaml")
+SCENARIO_PATH = Path("/workspaces/robman-final-proj/src/cafe_scenario.yaml")
 
 # Motion parameters
 APPROACH_HEIGHT = 0.15  # Height above object to approach from (meters)
@@ -53,11 +53,12 @@ GRASP_OFFSET = 0.00     # Offset from top of object (0 = grasp at top)
 
 # Gripper settings
 WSG_OPEN = 0.107
-WSG_CLOSED = 0.035
+WSG_CLOSED = 0.028
 
 # Timing
 MOVE_TIME = 2.5         # Time for each motion phase (seconds)
 GRASP_TIME = 2.0        # Time to close gripper (seconds)
+LIFT_TIME = 4.0         # Time to lift object (slower to be careful)
 
 # Segmentation parameters
 DBSCAN_EPS = 0.03       # DBSCAN clustering epsilon
@@ -68,49 +69,6 @@ DBSCAN_MIN_SAMPLES = 50 # DBSCAN min samples per cluster
 # Command Source Systems
 # --------------------------------------------------------------------------- #
 
-class JointPositionCommandSource(LeafSystem):
-    """Outputs [q_desired, v_desired] for iiwa_arm.desired_state"""
-
-    def __init__(self, q_initial: np.ndarray):
-        super().__init__()
-        q_initial = np.copy(q_initial).reshape(-1)
-        self._nq = q_initial.shape[0]
-        self._q_des = q_initial
-
-        self.DeclareVectorOutputPort(
-            "iiwa_desired_state",
-            BasicVector(2 * self._nq),
-            self._DoCalcOutput,
-        )
-
-    def _DoCalcOutput(self, context, output: BasicVector):
-        v_des = np.zeros(self._nq)
-        desired_state = np.concatenate([self._q_des, v_des])
-        output.SetFromVector(desired_state)
-
-    def set_q_desired(self, q_des: np.ndarray):
-        q_des = np.copy(q_des).reshape(-1)
-        assert q_des.shape[0] == self._nq
-        self._q_des = q_des
-
-
-class WsgCommandSource(LeafSystem):
-    """Outputs desired gripper width"""
-
-    def __init__(self, initial_width: float):
-        super().__init__()
-        self._width = float(initial_width)
-        self.DeclareVectorOutputPort(
-            "wsg_position",
-            BasicVector(1),
-            self._DoCalcOutput,
-        )
-
-    def _DoCalcOutput(self, context, output: BasicVector):
-        output.SetFromVector([self._width])
-
-    def set_width(self, width: float):
-        self._width = float(width)
 
 
 # --------------------------------------------------------------------------- #
@@ -303,12 +261,11 @@ def solve_ik(plant, plant_context, iiwa_model, wsg_model,
 
     result = Solve(prog)
     if not result.is_success():
-        # Print detailed error info
-        print(f"\n!!! IK FAILED !!!")
-        print(f"  Target position: {p_W_target}")
-        print(f"  Position tolerance: ±{position_tolerance}m")
-        print(f"  Orientation constraint: {R_WG_desired is not None}")
-        print(f"  Base locked: {lock_base}")
+        print(f"\n!!! IK FAILED boohoo !!!")
+        print(f"  target position: {p_W_target}")
+        print(f"  position tolerance: ±{position_tolerance}m")
+        print(f"  orientation constraint: {R_WG_desired is not None}")
+        print(f"  base locked: {lock_base}")
         if R_WG_desired is not None:
             print(f"  Theta bound: {theta_bound} rad")
         raise RuntimeError(f"IK failed for target {p_W_target}")
@@ -383,13 +340,9 @@ def pick_object(meshcat, simulator, diagram, plant, plant_context,
         "iiwa_base_x": q_plant_full[base_x_joint.position_start()],  # Use FULL plant state!
         "iiwa_base_y": q_plant_full[base_y_joint.position_start()],
         "iiwa_base_z": q_plant_full[base_z_joint.position_start()],
-        "iiwa_joint_1": q_plant_full[joint_1.position_start()],      # Lock first joint to keep tray stable
+        "iiwa_joint_1": q_plant_full[joint_1.position_start()],      # lock first joint to keep tray stable, maybe
     }
 
-    print(f"Locking base at: x={base_positions_lock['iiwa_base_x']:.3f}, "
-          f"y={base_positions_lock['iiwa_base_y']:.3f}, "
-          f"z={base_positions_lock['iiwa_base_z']:.3f}")
-    print(f"Locking joint_1 at: {base_positions_lock['iiwa_joint_1']:.3f} rad")
 
     # Now get iiwa start configuration for IK seed
     q_start = plant.GetPositions(plant_context, iiwa_model)
@@ -459,8 +412,8 @@ def pick_object(meshcat, simulator, diagram, plant, plant_context,
     print("4. Close gripper to grasp")
     move_to(q_grasp, WSG_CLOSED, GRASP_TIME)
 
-    print("5. Lift object")
-    move_to(q_lift, WSG_CLOSED, MOVE_TIME)
+    print("5. Lift object (slower)")
+    move_to(q_lift, WSG_CLOSED, LIFT_TIME)
 
     print("\n✓ Pick sequence complete!")
 

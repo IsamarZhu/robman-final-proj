@@ -12,7 +12,7 @@ from pydrake.all import (
     TrajectorySource,
 )
 from manipulation.station import LoadScenario, MakeHardwareStation, AddPointClouds
-from perception.segmentation import build_pointcloud, segment_objects_clustering, ObjectDetector
+from perception.object_segmentation import build_pointcloud, segment_objects_clustering, ObjectDetector
 import numpy as np
 
 def simulate_scenario():

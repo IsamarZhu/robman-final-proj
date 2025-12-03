@@ -25,7 +25,7 @@ from pydrake.multibody.parsing import ProcessModelDirectives, ModelDirectives
 from manipulation import running_as_notebook
 from manipulation.station import LoadScenario
 
-from perception.perception import add_cameras, perceive_tables, remove_table_points
+from perception.top_level_perception import add_cameras, perceive_tables, remove_table_points
 from pid_controller import PIDController
 from pydrake.trajectories import PiecewisePolynomial
 from pydrake.systems.primitives import TrajectorySource
@@ -122,7 +122,7 @@ if running_as_notebook:
 
 
 ######################## icp ########################
-from perception.segmentation import build_rim_pointcloud, estimate_mug_pose_icp
+from perception.object_segmentation import build_rim_pointcloud, estimate_mug_pose_icp
 rim_pc = build_rim_pointcloud(diagram, context)
 # meshcat.SetObject("rim_pc", rim_pc, point_size=0.05, rgba=Rgba(1, 0, 0, 0.4))
 X_WM_hat, (mug_bottom_z, mug_top_z) = estimate_mug_pose_icp(meshcat, rim_pc)

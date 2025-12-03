@@ -37,7 +37,7 @@ from manipulation.icp import IterativeClosestPoint
 # Config
 # --------------------------------------------------------------------------- #
 
-SCENARIO_PATH = Path("/workspaces/robman-final-proj/src/new_scenario.yaml")
+SCENARIO_PATH = Path("/workspaces/robman-final-proj/src/cafe_scenario.yaml")
 MUG_MESH_PATH = Path(
     "/workspaces/robman-final-proj/assets/mug/google_16k/textured.obj"
 )

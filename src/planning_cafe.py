@@ -8,8 +8,8 @@ from pydrake.all import (
     ConstantVectorSource,
 )
 from manipulation.station import LoadScenario, MakeHardwareStation
-from perception.perception import perceive_tables
-from find_path import Grid, AStarPlanner, PathFollower, add_obstacles, estimate_runtime
+from perception.top_level_perception import perceive_tables
+from pathing.find_path import Grid, AStarPlanner, PathFollower, add_obstacles, estimate_runtime
 
 # for debugging
 from pydrake.geometry import Rgba
@@ -27,7 +27,7 @@ INITIAL_DELAY = 1.0   # seconds
 
 def simulate_scenario():
     meshcat = StartMeshcat()
-    scenario_file = Path("/workspaces/robman-final-proj/src/new_scenario.yaml")
+    scenario_file = Path("/workspaces/robman-final-proj/src/cafe_scenario.yaml")
     scenario = LoadScenario(filename=str(scenario_file))
     
     # Initial base positions (x, y, z) + 7 arm joints = 10 total
