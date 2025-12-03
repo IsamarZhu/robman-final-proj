@@ -327,4 +327,10 @@ def pick_object(
         simulator.AdvanceTo(t + grasp_time)
         diagram.ForcedPublish(context)
 
+    print("10. return to place target position")
+    move_to_smooth(q_place, wsg_open, move_time)
+
+    print("11. return to starting pose")
+    move_to_smooth(q_start, wsg_open, move_time)
+
     print("\n✓ pick and place sequence complete!")
