@@ -43,7 +43,7 @@ GRASP_OFFSET = 0.00     # Offset from top of object (0 = grasp at top)
 
 # Gripper settings
 WSG_OPEN = 0.107
-WSG_CLOSED = 0.028
+WSG_CLOSED = 0.015  # Tighter closure to maintain grip during descent
 
 # Timing
 MOVE_TIME = 2.5         # Time for each motion phase (seconds)
