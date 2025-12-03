@@ -145,7 +145,6 @@ class ObjectDetector:
         for obj_name, template in self.templates.items():
             X_initial = self._get_initial_alignment(observed_np, template['cloud_points'])
             
-            print(template['cloud_points'].shape, observed_np.shape)
             X_MS, cost = IterativeClosestPoint(
                 p_Om=template['cloud_points'].T, 
                 p_Ws=observed_np.T,
@@ -176,7 +175,7 @@ class ObjectDetector:
         return RigidTransform(translation)
     
     def _calculate_fitness(self, observed, template, X_MS):
-        """calculate mean squared distance after transformation."""
+        """calculate mean squared distance after transformation"""
         # transform template to observed frame
         template_transformed = (X_MS.rotation().matrix() @ template.T).T + X_MS.translation()
         

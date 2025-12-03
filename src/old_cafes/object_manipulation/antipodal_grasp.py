@@ -48,7 +48,7 @@ def make_internal_model():
     plant, scene_graph = AddMultibodyPlantSceneGraph(builder, time_step=0.001)
     parser = Parser(plant)
     ConfigureParser(parser)
-    parser.AddModelsFromUrl(Path("/workspaces/robman-final-proj/single_robot_arm/grasping/simplified_grasp.yaml"))
+    parser.AddModelsFromUrl("file:///workspaces/robman-final-proj/src/object_manipulation/simplified_grasp.dmd.yaml")
     plant.Finalize()
     return builder.Build()
 
@@ -74,7 +74,8 @@ def generate_antipodal_grasp(diagram, context, cloud):
         min_cost_XGs = []
         for idx in indices:
             min_cost_XGs.append(X_Gs[idx])
-            
+    
+    print(f"found {len(costs)} antipodal grasp candidates, working on calculating the best one")
    
     plant = diagram.GetSubsystemByName("station").GetSubsystemByName("plant")
     plant_context = plant.GetMyContextFromRoot(context)

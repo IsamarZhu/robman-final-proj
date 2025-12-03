@@ -16,6 +16,7 @@ from perception.segmentation import build_pointcloud, segment_objects_clustering
 import numpy as np
 
 def simulate_scenario():
+    print("Maggie Yao")
     meshcat = StartMeshcat()
     scenario_file = Path("/workspaces/robman-final-proj/src/maggie.yaml")
     scenario = LoadScenario(filename=str(scenario_file))

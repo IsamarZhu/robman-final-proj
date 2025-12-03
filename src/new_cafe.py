@@ -8,7 +8,7 @@ from pydrake.all import (
     ConstantVectorSource,
 )
 from manipulation.station import LoadScenario, MakeHardwareStation
-from perception import perceive_tables
+from temp_perception import perceive_tables
 
 def simulate_scenario():
     meshcat = StartMeshcat()
