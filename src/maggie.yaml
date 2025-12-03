@@ -87,7 +87,7 @@ directives:
         iiwa_joint_2: [0.1]
         iiwa_joint_3: [0]
         iiwa_joint_4: [-0.9]
-        iiwa_joint_5: [0.6]
+        iiwa_joint_5: [0.9]
         iiwa_joint_6: [1.7]
         iiwa_joint_7: [0]
         iiwa_base_x: [1.4]

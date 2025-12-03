@@ -54,8 +54,15 @@ directives:
     file: file:///workspaces/robman-final-proj/assets/mug/mug.sdf
     default_free_body_pose:
       base_link:
-        translation: [1.4, 0.7, 1.1]
+        translation: [1.4, 0.5, 0.63]
         rotation: !Rpy { deg: [0, 0, 90] } # rotate handle away from gripper
+# - add_model:
+#     name: gelatin_box
+#     file: package://manipulation/hydro/009_gelatin_box.sdf
+#     default_free_body_pose:
+#       base_link_gelatin:
+#         translation: [1.45, 0.6, 0.65]
+#         rotation: !Rpy { deg: [-90, 0, 130] }
 # - add_model:
 #     name: mug2
 #     file: file:///workspaces/robman-final-proj/assets/mug/mug.sdf
@@ -80,7 +87,7 @@ directives:
         iiwa_joint_2: [0.1]
         iiwa_joint_3: [0]
         iiwa_joint_4: [-0.9]
-        iiwa_joint_5: [0.6]
+        iiwa_joint_5: [-0.1]
         iiwa_joint_6: [1.7]
         iiwa_joint_7: [0]
         iiwa_base_x: [1.4]
@@ -104,7 +111,7 @@ directives:
     parent: iiwa_arm::iiwa_link_0
     child: tray::tray_link
     X_PC:
-        translation: [0, 0.6, 0.5]
+        translation: [0, 0.5, 0.5]
         rotation: !Rpy { deg: [0, 180, 0]}
 - add_model:
     name: person
@@ -122,8 +129,8 @@ directives:
     name: camera0_origin
     X_PF:
         base_frame: tray::tray_link
-        rotation: !Rpy { deg: [-40.0, 0.0, 105.0]}
-        translation: [0.2, 0.1, -.2]
+        rotation: !Rpy { deg: [-40.0, 0.0, 90.0]}
+        translation: [0.3, 0, -.2]
 - add_model:
     name: camera0
     file: package://manipulation/camera_box.sdf
@@ -136,7 +143,7 @@ directives:
     X_PF:
         base_frame: tray::tray_link
         rotation: !Rpy { deg: [-40.0, 0.0, 180.0]}
-        translation: [-0.1, 0.27, -.2]
+        translation: [0, 0.27, -.2]
 - add_model:
     name: camera1
     file: package://manipulation/camera_box.sdf
@@ -148,14 +155,28 @@ directives:
     name: camera2_origin
     X_PF:
         base_frame: tray::tray_link
-        rotation: !Rpy { deg: [-47.0, 0.0, 330.0]}
-        translation: [-0.3, -0.2, -.2]
+        rotation: !Rpy { deg: [-47.0, 0.0, 270.0]}
+        translation: [-0.3, 0, -.2]
 - add_model:
     name: camera2
     file: package://manipulation/camera_box.sdf
 - add_weld:
     parent: tray::camera2_origin
     child: camera2::base
+
+- add_frame:
+    name: camera3_origin
+    X_PF:
+        base_frame: tray::tray_link
+        rotation: !Rpy { deg: [-47.0, 0.0, 360.0]}
+        translation: [0, -0.2, -.2]
+- add_model:
+    name: camera3
+    file: package://manipulation/camera_box.sdf
+- add_weld:
+    parent: tray::camera3_origin
+    child: camera3::base
+
 
 - add_frame:
     name: topview_camera
@@ -188,6 +209,13 @@ cameras:
         depth: True
         X_PB:
             base_frame: camera2::base
+
+    camera3:
+        name: camera3
+        depth: True
+        X_PB:
+            base_frame: camera3::base
+
     topview_camera:
         name: topview_camera
         depth: True

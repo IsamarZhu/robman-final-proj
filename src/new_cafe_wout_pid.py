@@ -49,7 +49,7 @@ MAX_ICP_ITERS = 25
 
 TABLE_Z_THRESH_MARGIN = 0.02   # how far above "table" z we keep points
 SAFE_CLEARANCE = 0.25          # flying height above largest object
-GRASP_BELOW_RIM = -0.02
+GRASP_BELOW_RIM = 0
 PLACE_ABOVE_TABLE = 0.02
 
 WSG_OPEN = 0.12
