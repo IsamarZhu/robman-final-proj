@@ -90,10 +90,8 @@ def pick_object(
     meshcat.SetObject("traj/lift", Box(0.015, 0.015, 0.015), Rgba(0, 0, 1, 0.5))
     meshcat.SetTransform("traj/lift", RigidTransform(p_lift))
 
-    # Solve IK for key poses
     print("\nSolving IK for key poses...")
 
-    # Get joint positions to lock (base + first arm joint)
     base_positions_lock = get_locked_joint_positions(plant, plant_context, iiwa_model)
 
     print(
@@ -103,10 +101,8 @@ def pick_object(
     )
     print(f"Locking joint_1 at: {base_positions_lock['iiwa_joint_1']:.3f} rad")
 
-    # Now get iiwa start configuration for IK seed
     q_start = plant.GetPositions(plant_context, iiwa_model)
 
-    # Approach: Base locked, relaxed constraints
     q_approach = solve_ik(
         plant,
         plant_context,
@@ -121,7 +117,6 @@ def pick_object(
     )
     print("  ✓ Approach pose")
 
-    # Grasp: Base locked, moderate constraints for accuracy
     q_grasp = solve_ik(
         plant,
         plant_context,
@@ -136,7 +131,6 @@ def pick_object(
     )
     print("  ✓ Grasp pose")
 
-    # Lift: Base locked, moderate tolerance
     q_lift = solve_ik(
         plant,
         plant_context,
@@ -151,7 +145,7 @@ def pick_object(
     )
     print("  ✓ Lift pose")
 
-    # Motion helper
+    # motion helper
     def move_to(q_des, gripper_width, duration):
         """move robot to joint configuration with specified gripper width"""
         cmd_source.set_q_desired(q_des)

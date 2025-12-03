@@ -13,7 +13,7 @@ from pathing.find_path import Grid, AStarPlanner, PathFollower, add_obstacles, e
 
 # for debugging
 from pydrake.geometry import Rgba
-from viz import (
+from pathing.viz import (
     visualize_grid_in_meshcat, 
     visualize_robot_config, 
     visualize_path

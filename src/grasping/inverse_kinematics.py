@@ -64,7 +64,7 @@ def solve_ik(
                 joint = plant.GetJointByName(joint_name, iiwa_model)
                 idx = joint.position_start()
 
-                # Use explicitly provided position if available, otherwise use current
+                # use explicitly provided position if available, otherwise use current
                 if base_positions_to_lock and joint_name in base_positions_to_lock:
                     q_val = base_positions_to_lock[joint_name]
                 else:
@@ -107,12 +107,12 @@ def solve_ik(
     result = Solve(prog)
     if not result.is_success():
         print(f"\n!!! IK FAILED !!!")
-        print(f"  Target position: {p_W_target}")
-        print(f"  Position tolerance: ±{position_tolerance}m")
-        print(f"  Orientation constraint: {R_WG_desired is not None}")
-        print(f"  Base locked: {lock_base}")
+        print(f"  target position: {p_W_target}")
+        print(f"  position tolerance: ±{position_tolerance}m")
+        print(f"  orientation constraint: {R_WG_desired is not None}")
+        print(f"  base locked: {lock_base}")
         if R_WG_desired is not None:
-            print(f"  Theta bound: {theta_bound} rad")
+            print(f"  theta bound: {theta_bound} rad")
         raise RuntimeError(f"IK failed for target {p_W_target}")
 
     q_sol_full = result.GetSolution(q_decision)

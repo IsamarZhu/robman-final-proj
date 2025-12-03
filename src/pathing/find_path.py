@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from typing import Optional, Tuple, List
 from pydrake.all import LeafSystem
 
-from viz import visualize_grid_in_meshcat
+from pathing.viz import visualize_grid_in_meshcat
 
 TABLE_LENGTH = 0.9
 TABLE_WIDTH = 1.3125
