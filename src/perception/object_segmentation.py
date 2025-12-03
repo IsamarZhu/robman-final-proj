@@ -12,9 +12,6 @@ from pydrake.all import (
     Solve,
 )
 
-from pydrake.multibody.parsing import ProcessModelDirectives, ModelDirectives
-from manipulation import running_as_notebook
-from manipulation.station import LoadScenario
 from manipulation.icp import IterativeClosestPoint
 from pydrake.systems.sensors import RgbdSensor, CameraInfo, PixelType
 from pydrake.geometry import DepthRenderCamera, RenderCameraCore, ColorRenderCamera, ClippingRange, DepthRange
@@ -24,7 +21,6 @@ from pydrake.all import PointCloud
 import numpy as np
 from pathlib import Path
 from PIL import Image
-from pid_controller import PIDController
 from sklearn.cluster import DBSCAN
 import numpy as np
 from manipulation import running_as_notebook, FindResource
