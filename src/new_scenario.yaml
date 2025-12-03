@@ -83,7 +83,7 @@ directives:
     name: iiwa_arm
     file: package://manipulation/mobile_iiwa14_primitive_collision.urdf
     default_joint_positions:
-        iiwa_joint_1: [1.94]
+        iiwa_joint_1: [0.0]
         iiwa_joint_2: [0.1]
         iiwa_joint_3: [0]
         iiwa_joint_4: [-0.9]
@@ -92,7 +92,7 @@ directives:
         iiwa_joint_7: [0]
         iiwa_base_x: [1.4]
         iiwa_base_y: [0]
-        iiwa_base_z: [0.1]
+        iiwa_base_z: [0]
 
 - add_model:
     name: wsg_arm
@@ -108,7 +108,7 @@ directives:
     name: tray
     file: file:///workspaces/robman-final-proj/assets/tray.sdf
 - add_weld:
-    parent: iiwa_arm::iiwa_link_0
+    parent: iiwa_arm::iiwa_link_1
     child: tray::tray_link
     X_PC:
         translation: [0, 0.5, 0.5]

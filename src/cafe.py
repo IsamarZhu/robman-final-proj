@@ -25,7 +25,7 @@ from pydrake.multibody.parsing import ProcessModelDirectives, ModelDirectives
 from manipulation import running_as_notebook
 from manipulation.station import LoadScenario
 
-from temp_perception import add_cameras, perceive_tables, remove_table_points
+from perception.perception import add_cameras, perceive_tables, remove_table_points
 from pid_controller import PIDController
 from pydrake.trajectories import PiecewisePolynomial
 from pydrake.systems.primitives import TrajectorySource

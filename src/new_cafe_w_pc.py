@@ -36,7 +36,7 @@ from manipulation import running_as_notebook
 from manipulation.station import LoadScenario
 from manipulation.icp import IterativeClosestPoint
 
-from temp_perception import add_cameras, get_depth
+from perception.perception import add_cameras, get_depth
 from pid_controller import PIDController  # your custom controller
 
 # --------------------------------------------------------------------------- #

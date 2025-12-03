@@ -8,33 +8,47 @@ from pydrake.all import (
     ConstantVectorSource,
 )
 from manipulation.station import LoadScenario, MakeHardwareStation
-from temp_perception import perceive_tables
-from find_path import Grid, AStarPlanner, PathFollower, add_obstacles
+from perception.perception import perceive_tables
+from find_path import Grid, AStarPlanner, PathFollower, add_obstacles, estimate_runtime
 
 # for debugging
-# from viz import (
-#     visualize_grid_in_meshcat, 
-#     visualize_robot_config, 
-#     visualize_path
-# )
+from pydrake.geometry import Rgba
+from viz import (
+    visualize_grid_in_meshcat, 
+    visualize_robot_config, 
+    visualize_path
+)
 import numpy as np
+
+# Motion parameters
+MOVEMENT_SPEED = 0.5  # m/s
+ROTATION_SPEED = 0.1  # rad/s
+INITIAL_DELAY = 1.0   # seconds
 
 def simulate_scenario():
     meshcat = StartMeshcat()
     scenario_file = Path("/workspaces/robman-final-proj/src/new_scenario.yaml")
     scenario = LoadScenario(filename=str(scenario_file))
+    
+    # Initial base positions (x, y, z) + 7 arm joints = 10 total
+    # do not manually change arm_positions[0]
+    arm_positions = [0.0, 0.1, 0.0, -0.9, 0.6, 1.7, 0.0]  # 7 arm joints
+    
+    start_config = (1.4, 0.0, 0.0)
+    end_config = (1.4, 0.0, 0.0)
+    
+    # Create builder and station
     builder = DiagramBuilder()
     station = builder.AddSystem(MakeHardwareStation(
         scenario=scenario,
         meshcat=meshcat,
     ))
     
-    # Initial base positions (x, y, z) + 7 arm joints = 10 total
-    initial_position = (1.4, 0.0)  
-    arm_positions = [1.94, 0.1, 0.0, -0.9, 0.6, 1.7, 0.0]  # 7 arm joints
-
+    # Create path follower with empty paths initially
     path_follower = builder.AddSystem(
-        PathFollower(initial_position, arm_positions, speed=0.5)
+        PathFollower(start_config[:2], arm_positions, paths=[],
+                     speed=MOVEMENT_SPEED, start_theta=start_config[2], goal_theta=end_config[2],
+                     rotation_speed=ROTATION_SPEED, initial_delay=INITIAL_DELAY)
     )
     
     builder.Connect(
@@ -57,7 +71,13 @@ def simulate_scenario():
     station_context = station.GetMyContextFromRoot(context)
     
     tables = perceive_tables(station, station_context)
-    
+    table_goals = [
+        # tables[0]['waypoints_world'][2],
+        (4, 4, np.pi/2),
+        (-4, 4, np.pi/2),
+        end_config
+    ]
+
     # grid for A*
     grid = Grid(
         x_min=-5.0, 
@@ -68,53 +88,54 @@ def simulate_scenario():
     )
     add_obstacles(grid, tables)
     
-    # (x, y, theta)
-    start_config = (1.4, 0.0, 0.0)
-    goal_config = (-2.0, 0.0, np.pi/2)
+    # Plan paths to visit each table in sequence
+    planner = AStarPlanner(grid)
+    all_paths = []
+    
+    current_pos = (start_config[0], start_config[1])
+    
+    for i, goal in enumerate(table_goals):
+        goal_xy = (goal[0], goal[1])
+        
+        # Plan path from current position to this goal
+        path = planner.plan(current_pos, goal_xy)
+        
+        if not path:
+            print(f"No path found to table {i}!")
+            return
+        
+        # Smooth the path
+        smoothed_path = planner.smooth_path(path)
+        all_paths.append(smoothed_path)
+        
+        # Update current position for next iteration
+        current_pos = goal_xy
+        
+        print(f"Path {i+1}: {len(smoothed_path)} waypoints")
+    
+    # Set all paths in the path follower
+    path_follower.set_paths(all_paths)
+    
+    total_distance, total_rotation = estimate_runtime(start_config, table_goals, all_paths)
+    movement_time = total_distance / MOVEMENT_SPEED
+    rotation_time = total_rotation / ROTATION_SPEED
+    total_sim_time = INITIAL_DELAY + movement_time + rotation_time + 2.0  # +2s buffer
 
-
-    # # for debugging
+    # for debugging
     # visualize_grid_in_meshcat(grid, meshcat, show_grid_lines=True)
     # visualize_robot_config(meshcat, *start_config, label="start", 
     #                       color=Rgba(0.0, 1.0, 0.0, 0.6))
     # visualize_robot_config(meshcat, *goal_config, label="goal", 
     #                       color=Rgba(1.0, 0.0, 0.0, 0.6))
+    # visualize_path(meshcat, path, color=Rgba(0.5, 0.5, 1.0, 0.5), 
+    #               label="raw_path", show_orientations=False)
+    # visualize_path(meshcat, smoothed_path, color=Rgba(0.0, 0.0, 1.0, 0.9), 
+    #               label="smoothed_path", show_orientations=True)
     
-    # path using A*
-    planner = AStarPlanner(grid)
-    start_xy = (start_config[0], start_config[1])
-    goal_xy = (goal_config[0], goal_config[1])
+    diagram.ForcedPublish(context)
+    simulator.AdvanceTo(total_sim_time)
     
-    path = planner.plan(start_xy, goal_xy)
-    
-    if path:
-        smoothed_path = planner.smooth_path(path)
-        path_follower.add_path(smoothed_path)
-        # print(f"smooth path w {len(smoothed_path)} waypoints")
-        
-        # for debugging
-        # visualize_path(meshcat, path, color=Rgba(0.5, 0.5, 1.0, 0.5), 
-        #               label="raw_path", show_orientations=False)
-        # visualize_path(meshcat, smoothed_path, color=Rgba(0.0, 0.0, 1.0, 0.9), 
-        #               label="smoothed_path", show_orientations=True)
-        
-        
-        total_sim_time = 30.0
-        diagram.ForcedPublish(context)
-        meshcat.StartRecording()
-        simulator.AdvanceTo(total_sim_time)
-        meshcat.StopRecording()
-        meshcat.PublishRecording()
-    else:
-        print("No path found!")
-        diagram.ForcedPublish(context)
-        meshcat.StartRecording()
-        simulator.AdvanceTo(10.0)
-        meshcat.StopRecording()
-        meshcat.PublishRecording()
-    
-    while True:
-        sleep(1)
+    input("Press Enter to exit...")
 
 
 if __name__ == "__main__":

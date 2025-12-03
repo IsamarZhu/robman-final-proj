@@ -161,6 +161,23 @@ def perceive_tables(station, station_context):
         center_depth = depth_array_cropped[int(cy_pixel), int(cx_pixel)]
         table['center_world'] = pixel_to_world_topview(cx_pixel, cy_pixel, center_depth)
         w, h = table['size']
+        table['corner_world'] = []
+        for corner in table['box_corners']:
+            corner_depth = depth_array_cropped[int(corner[1]), int(corner[0])]
+            corner_world = pixel_to_world_topview(corner[0], corner[1], corner_depth)
+            table['corner_world'].append(corner_world)
+        
+        # Calculate waypoint world coordinates (midpoints between corners)
+        table['waypoints_world'] = []
+        corners_world = table['corner_world']
+        for i in range(len(corners_world)):
+            next_i = (i + 1) % len(corners_world)
+            midpoint = (
+                (corners_world[i][0] + corners_world[next_i][0]) / 2,
+                (corners_world[i][1] + corners_world[next_i][1]) / 2,
+                (corners_world[i][2] + corners_world[next_i][2]) / 2
+            )
+            table['waypoints_world'].append(midpoint)
         
         if w > h: 
             world_angle = np.pi / 2
@@ -196,8 +213,8 @@ def detect_tables_from_img(depth_array):
     thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel_small, iterations=1)
     
     # Save thresholded image for debugging
-    # thresh_output_path = Path("/workspaces/robman-final-proj/threshold_debug.png")
-    # cv2.imwrite(str(thresh_output_path), thresh)
+    thresh_output_path = Path("/workspaces/robman-final-proj/threshold_debug.png")
+    cv2.imwrite(str(thresh_output_path), thresh)
     
     # Find contours of individual tables
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -238,6 +255,7 @@ def detect_tables_from_img(depth_array):
         if dim1_match and dim2_match:
             table_contours.append(feat['contour'])
 
+    # for debugging
     # result_img = cv2.cvtColor(depth_normalized.astype(np.uint8), cv2.COLOR_GRAY2BGR)
 
     tables_info = []
@@ -248,7 +266,7 @@ def detect_tables_from_img(depth_array):
 
         (cx, cy), (w, h), angle = rect
         area = cv2.contourArea(contour)
-        # color = (0, 255, 0)
+        color = (0, 255, 0)
 
         waypoints_pixel = [
             (box[0] + box[1]) / 2,  # midpoint of edge 0-1
@@ -280,7 +298,7 @@ def detect_tables_from_img(depth_array):
         })
     
     # Table detection result
-    # output_path = Path("/workspaces/robman-final-proj/table_detection.jpg")
+    # output_path = Path("/workspaces/robman-final-proj/table_detection.png")
     # cv2.imwrite(str(output_path), result_img)
     # print(f"\nDetection result saved to: {output_path}")
     
