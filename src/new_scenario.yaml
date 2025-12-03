@@ -104,7 +104,7 @@ directives:
     parent: iiwa_arm::iiwa_link_0
     child: tray::tray_link
     X_PC:
-        translation: [0, 0.7, 0.5]
+        translation: [0, 0.6, 0.5]
         rotation: !Rpy { deg: [0, 180, 0]}
 - add_model:
     name: person
