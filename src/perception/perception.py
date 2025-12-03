@@ -9,8 +9,8 @@ from PIL import Image
 import cv2
 import sys
 
-TABLE_INTENSITY_MIN = 135
-TABLE_INTENSITY_MAX = 140
+TABLE_INTENSITY_MIN = 145
+TABLE_INTENSITY_MAX = 150
 SIZE_TOLERANCE = 0.07
 
 # table size in pixels
@@ -256,7 +256,7 @@ def detect_tables_from_img(depth_array):
             table_contours.append(feat['contour'])
 
     # for debugging
-    # result_img = cv2.cvtColor(depth_normalized.astype(np.uint8), cv2.COLOR_GRAY2BGR)
+    result_img = cv2.cvtColor(depth_normalized.astype(np.uint8), cv2.COLOR_GRAY2BGR)
 
     tables_info = []
     for i, contour in enumerate(table_contours):
@@ -276,16 +276,16 @@ def detect_tables_from_img(depth_array):
         ]
 
         # for debugging
-        # cv2.drawContours(result_img, [box], 0, color, 2)
-        # cv2.drawContours(result_img, [contour], 0, (255, 0, 0), 1)
+        cv2.drawContours(result_img, [box], 0, color, 2)
+        cv2.drawContours(result_img, [contour], 0, (255, 0, 0), 1)
         
-        # # label
-        # label = f"Table {i+1}"
-        # cv2.putText(result_img, label, (int(cx), int(cy)), 
-        #            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+        # label
+        label = f"Table {i+1}"
+        cv2.putText(result_img, label, (int(cx), int(cy)), 
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
         
-        # for point in waypoints_pixel:
-        #     cv2.circle(result_img, tuple(point.astype(int)), 3, (0, 255, 255), -1)
+        for point in waypoints_pixel:
+            cv2.circle(result_img, tuple(point.astype(int)), 3, (0, 255, 255), -1)
         
         tables_info.append({
             'id': i + 1,
@@ -298,8 +298,8 @@ def detect_tables_from_img(depth_array):
         })
     
     # Table detection result
-    # output_path = Path("/workspaces/robman-final-proj/table_detection.png")
-    # cv2.imwrite(str(output_path), result_img)
-    # print(f"\nDetection result saved to: {output_path}")
+    output_path = Path("/workspaces/robman-final-proj/table_detection.png")
+    cv2.imwrite(str(output_path), result_img)
+    print(f"\nDetection result saved to: {output_path}")
     
     return tables_info
