@@ -164,18 +164,18 @@ directives:
     parent: tray::camera2_origin
     child: camera2::base
 
-- add_frame:
-    name: camera3_origin
-    X_PF:
-        base_frame: tray::tray_link
-        rotation: !Rpy { deg: [-47.0, 0.0, 360.0]}
-        translation: [0, -0.2, -.2]
-- add_model:
-    name: camera3
-    file: package://manipulation/camera_box.sdf
-- add_weld:
-    parent: tray::camera3_origin
-    child: camera3::base
+# - add_frame:
+#     name: camera3_origin
+#     X_PF:
+#         base_frame: tray::tray_link
+#         rotation: !Rpy { deg: [-47.0, 0.0, 360.0]}
+#         translation: [0, -0.2, -.2]
+# - add_model:
+#     name: camera3
+#     file: package://manipulation/camera_box.sdf
+# - add_weld:
+#     parent: tray::camera3_origin
+#     child: camera3::base
 
 
 - add_frame:
@@ -210,11 +210,11 @@ cameras:
         X_PB:
             base_frame: camera2::base
 
-    camera3:
-        name: camera3
-        depth: True
-        X_PB:
-            base_frame: camera3::base
+    # camera3:
+    #     name: camera3
+    #     depth: True
+    #     X_PB:
+    #         base_frame: camera3::base
 
     topview_camera:
         name: topview_camera

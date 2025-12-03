@@ -156,12 +156,12 @@ def detect_and_locate_object(diagram, context, meshcat, target_object="mug"):
 
     for i, obj_cloud in enumerate(object_clouds):
         # Visualize this cluster
-        meshcat.SetObject(
-            f"detection/cluster_{i}",
-            obj_cloud,
-            point_size=0.01,
-            rgba=colors[i % len(colors)],
-        )
+        # meshcat.SetObject(
+        #     f"detection/cluster_{i}",
+        #     obj_cloud,
+        #     point_size=0.01,
+        #     rgba=colors[i % len(colors)],
+        # )
 
         # Match against templates
         print(f"\nCluster {i}:")
@@ -348,7 +348,7 @@ def pick_object(meshcat, simulator, diagram, plant, plant_context,
 
     # Key positions
     x, y, z_grasp = grasp_center_xyz
-
+    z_grasp += 0.05
     p_approach = np.array([x, y, z_grasp + APPROACH_HEIGHT])
     p_grasp = np.array([x, y, z_grasp])
     p_lift = np.array([x, y, z_grasp + LIFT_HEIGHT])

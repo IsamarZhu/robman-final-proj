@@ -65,9 +65,10 @@ def build_pointcloud(diagram, context) -> PointCloud:
     pc0 = diagram.GetOutputPort("camera0.point_cloud").Eval(context)
     pc1 = diagram.GetOutputPort("camera1.point_cloud").Eval(context)
     pc2 = diagram.GetOutputPort("camera2.point_cloud").Eval(context)
-    pc3 = diagram.GetOutputPort("camera3.point_cloud").Eval(context)
+    # pc3 = diagram.GetOutputPort("camera3.point_cloud").Eval(context)
 
-    xyz = np.concatenate([pc0.xyzs(), pc1.xyzs(), pc2.xyzs(), pc3.xyzs()], axis=1,)
+    # xyz = np.concatenate([pc0.xyzs(), pc1.xyzs(), pc2.xyzs(), pc3.xyzs()], axis=1,)
+    xyz = np.concatenate([pc0.xyzs(), pc1.xyzs(), pc2.xyzs()], axis=1,)
     concat_pc = PointCloud(xyz.shape[1])
     concat_pc.mutable_xyzs()[:] = xyz
 
