@@ -111,7 +111,7 @@ directives:
     parent: iiwa_arm::iiwa_link_1
     child: tray::tray_link
     X_PC:
-        translation: [0.5, 0, 0.35]
+        translation: [0.5, 0, 0.33]
         rotation: !Rpy { deg: [0, 180, -90]}
 - add_model:
     name: person
@@ -129,8 +129,8 @@ directives:
     name: camera0_origin
     X_PF:
         base_frame: tray::tray_link
-        rotation: !Rpy { deg: [-40.0, 0.0, 90.0]}
-        translation: [0.3, 0, -.2]
+        rotation: !Rpy { deg: [-47.0, 0.0, 90.0]}
+        translation: [0.3, 0, -.17]
 - add_model:
     name: camera0
     file: package://manipulation/camera_box.sdf
@@ -142,8 +142,8 @@ directives:
     name: camera1_origin
     X_PF:
         base_frame: tray::tray_link
-        rotation: !Rpy { deg: [-40.0, 0.0, 180.0]}
-        translation: [0, 0.27, -.2]
+        rotation: !Rpy { deg: [-47.0, 0.0, 180.0]}
+        translation: [0, 0.27, -.17]
 - add_model:
     name: camera1
     file: package://manipulation/camera_box.sdf
@@ -156,7 +156,7 @@ directives:
     X_PF:
         base_frame: tray::tray_link
         rotation: !Rpy { deg: [-47.0, 0.0, 270.0]}
-        translation: [-0.3, 0, -.2]
+        translation: [-0.3, 0, -.17]
 - add_model:
     name: camera2
     file: package://manipulation/camera_box.sdf

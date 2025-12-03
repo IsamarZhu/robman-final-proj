@@ -118,11 +118,16 @@ class ObjectDetector:
         
         for name, mesh_path in self.mesh_templates.items():
             mesh = trimesh.load(mesh_path)
+
+            # scale down mug mesh by 0.8
+            if name == "mug":
+                mesh.apply_scale(0.8)
+
             cloud_points, _ = trimesh.sample.sample_surface(mesh, 1000)
-            
+
             template_pc = PointCloud(cloud_points.shape[0])
             template_pc.mutable_xyzs()[:] = cloud_points.T
-            
+
             self.templates[name] = {
                 'mesh': mesh,
                 'point_cloud': template_pc,

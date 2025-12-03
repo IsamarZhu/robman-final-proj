@@ -75,10 +75,28 @@ def pick_object(
     p_approach = np.array([x, y, z_grasp + approach_height])
     p_grasp = np.array([x, y, z_grasp])
     p_lift = np.array([x, y, z_grasp + lift_height])
+    p_lift_higher = np.array([x, y, z_grasp + lift_height + 0.15])  # 10cm higher
 
-    print(f"Approach:  {p_approach}")
-    print(f"Grasp:     {p_grasp}")
-    print(f"Lift:      {p_lift}")
+    # Target place position - offset from current robot base position
+    # Get current robot base position
+    q_current = plant.GetPositions(plant_context, iiwa_model)
+    current_base_x = q_current[0]  # iiwa_base_x
+    current_base_y = q_current[1]  # iiwa_base_y
+
+    # Customize these offsets relative to current base position
+    place_offset_x = -0.5  # Offset in x from current base position
+    place_offset_y = 0.3   # Offset in y from current base position
+
+    place_x = current_base_x + place_offset_x
+    place_y = current_base_y + place_offset_y
+    place_z = p_lift_higher[2]  # Same height as lift_higher
+    p_place_target = np.array([place_x, place_y, place_z])
+
+    print(f"Approach:      {p_approach}")
+    print(f"Grasp:         {p_grasp}")
+    print(f"Lift:          {p_lift}")
+    print(f"Lift higher:   {p_lift_higher}")
+    print(f"Place target:  {p_place_target} (x={place_x}, y={place_y} rel. to base)")
 
     # Visualize trajectory
     meshcat.SetObject("traj/approach", Box(0.015, 0.015, 0.015), Rgba(0, 1, 0, 0.5))
@@ -89,6 +107,13 @@ def pick_object(
 
     meshcat.SetObject("traj/lift", Box(0.015, 0.015, 0.015), Rgba(0, 0, 1, 0.5))
     meshcat.SetTransform("traj/lift", RigidTransform(p_lift))
+
+    meshcat.SetObject("traj/lift_higher", Box(0.015, 0.015, 0.015), Rgba(1, 1, 0, 0.5))
+    meshcat.SetTransform("traj/lift_higher", RigidTransform(p_lift_higher))
+
+    # Visualize place target position (magenta box, gripper pointing down)
+    meshcat.SetObject("traj/place_target", Box(0.03, 0.03, 0.03), Rgba(1, 0, 1, 0.8))
+    meshcat.SetTransform("traj/place_target", RigidTransform(R_WG_down, p_place_target))
 
     print("\nSolving IK for key poses...")
 
@@ -145,6 +170,21 @@ def pick_object(
     )
     print("  ✓ Lift pose")
 
+    # Lift higher: Base locked, relaxed tolerance
+    q_lift_higher = solve_ik(
+        plant,
+        plant_context,
+        iiwa_model,
+        wsg_model,
+        p_lift_higher,
+        R_WG_down,
+        position_tolerance=0.08,
+        lock_base=True,
+        theta_bound=0.8,
+        base_positions_to_lock=base_positions_lock,
+    )
+    print("  ✓ Lift higher pose")
+
     # motion helper
     def move_to(q_des, gripper_width, duration):
         """move robot to joint configuration with specified gripper width"""
@@ -178,5 +218,8 @@ def pick_object(
 
     print("5. lift object (slower)")
     move_to(q_lift, wsg_closed, lift_time)
+
+    print("6. lift 10cm higher")
+    move_to(q_lift_higher, wsg_closed, lift_time)
 
     print("\n✓ pick sequence complete!")
