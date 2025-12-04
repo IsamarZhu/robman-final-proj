@@ -23,32 +23,13 @@ def detect_and_locate_object(
     grasp_offset=0.00,
 ):
     """
-    Detect objects in scene and locate the target object using segmentation + ICP.
-
-    Args:
-        diagram: Drake diagram with camera point cloud outputs
-        context: Diagram context
-        meshcat: Meshcat visualizer
-        target_object: Name of object to find ("mug", "gelatin_box", etc.)
-        dbscan_eps: DBSCAN clustering epsilon parameter
-        dbscan_min_samples: DBSCAN minimum samples per cluster
-        grasp_offset: Z-offset from top of object for grasp position (meters)
-
-    Returns:
-        X_WO: RigidTransform of object pose in world frame
-        grasp_center_xyz: (x, y, z) position for grasp center
-        object_top_z: z-coordinate of object's top surface
+    detect objects in scene and locate the target object using segmentation + ICP
+    and returns the transformation of the object in the world frame along with
+    the computed grasp position
     """
 
-    print("\n=== OBJECT DETECTION ===")
-
-    # 1. Build point cloud from cameras
-    print("Building point cloud from cameras...")
     pc = build_pointcloud(diagram, context)
-    print(f"Total points after filtering: {pc.xyzs().shape[1]}")
 
-    # 2. Segment into individual objects using DBSCAN
-    print(f"Segmenting objects (eps={dbscan_eps}, min_samples={dbscan_min_samples})...")
     object_clouds = segment_objects_clustering(
         pc, eps=dbscan_eps, min_samples=dbscan_min_samples
     )
@@ -57,8 +38,6 @@ def detect_and_locate_object(
     if len(object_clouds) == 0:
         raise RuntimeError("No objects detected in scene!")
 
-    # 3. Match each cluster to known objects using ICP
-    print(f"\nMatching objects to templates...")
     detector = ObjectDetector()
 
     best_match = None
@@ -66,11 +45,9 @@ def detect_and_locate_object(
     best_match_pose = None
     best_match_cloud = None
 
-    # Visualize detected clusters
     colors = [Rgba(1, 0, 0), Rgba(0, 1, 0), Rgba(0, 0, 1), Rgba(1, 1, 0)]
 
     for i, obj_cloud in enumerate(object_clouds):
-        # Optional: Visualize this cluster
         meshcat.SetObject(
             f"detection/cluster_{i}",
             obj_cloud,
@@ -89,35 +66,21 @@ def detect_and_locate_object(
             best_match_score = score
             best_match_pose = pose
             best_match_cloud = obj_cloud
-            print(f"  ✓ New best {target_object} match!")
 
     if best_match is None:
-        raise RuntimeError(f"Could not find {target_object} in scene!")
+        raise RuntimeError(f"could not find {target_object} in scene")
 
-    print(f"\n✓ Found {target_object} with score {best_match_score:.6f}")
+    print(f"\nfound {target_object} with score {best_match_score:.6f}")
 
-    # 4. Compute grasp pose from ICP result
-    X_WO = best_match_pose  # Object pose in world frame
+    X_WO = best_match_pose 
 
-    # Get the matched object's point cloud in world frame
-    obj_xyz = best_match_cloud.xyzs()  # (3, N) in world frame
-
-    # Find top of object
+    obj_xyz = best_match_cloud.xyzs()
     object_top_z = float(np.max(obj_xyz[2, :]))
 
-    # Find center in x-y plane (use centroid)
     center_x = float(np.mean(obj_xyz[0, :]))
     center_y = float(np.mean(obj_xyz[1, :]))
-
-    # Grasp position: centered above object, at top surface + offset
     grasp_center_xyz = np.array([center_x, center_y, object_top_z + grasp_offset])
 
-    print(f"\nGrasp computation:")
-    print(f"  Object center (x,y): ({center_x:.3f}, {center_y:.3f})")
-    print(f"  Object top z: {object_top_z:.3f}")
-    print(f"  Grasp position: {grasp_center_xyz}")
-
-    # Visualize grasp target
     meshcat.SetObject(
         "grasp/target",
         Box(0.02, 0.02, 0.02),

@@ -86,7 +86,6 @@ def pick_object(
     print("\nsolving ik for poses")
 
     base_positions_lock = get_locked_joint_positions(plant, plant_context, iiwa_model)
-
     q_start = plant.GetPositions(plant_context, iiwa_model)
 
     q_approach = solve_ik(
@@ -170,7 +169,7 @@ def pick_object(
 
     # motion helper with smooth trajectory interpolation
     def move_to_smooth(q_des, gripper_width, duration, num_steps=50, monitor_collision=False, baseline_force=0.0):
-        """Smoothly interpolate to joint configuration with specified gripper width"""
+        """smoothly interpolate to joint configuration with specified gripper width"""
         q_current = plant.GetPositions(plant_context, iiwa_model)
 
         times = [0.0, duration]

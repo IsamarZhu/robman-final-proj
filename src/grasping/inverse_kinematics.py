@@ -23,28 +23,8 @@ def solve_ik(
     base_positions_to_lock=None,
 ):
     """
-    Solve IK for gripper to reach target position (and optionally orientation).
-
-    This solver supports locking the mobile base and first arm joint to keep
-    the robot stable during manipulation tasks.
-
-    Args:
-        plant: MultibodyPlant
-        plant_context: plant context
-        iiwa_model: iiwa model instance
-        wsg_model: wsg gripper model instance
-        p_W_target: target position in world frame (3,) array
-        R_WG_desired: desired gripper orientation (RotationMatrix) or None
-        position_tolerance: tolerance for position constraint (meters)
-        lock_base: if True, lock mobile base joints and first arm joint
-        theta_bound: orientation tolerance (radians)
-        base_positions_to_lock: dict of {joint_name: value} for explicit locking
-
-    Returns:
-        q_iiwa: joint positions for iiwa (10-dof for mobile base + arm)
-
-    Raises:
-        RuntimeError: if IK solver fails to find a solution
+    solve IK for gripper to reach target position and we lock the mobile base and 
+    first arm joint to keep the robot stable during manipulation tasks
     """
 
     q_seed = plant.GetPositions(plant_context)
@@ -107,10 +87,6 @@ def solve_ik(
     result = Solve(prog)
     if not result.is_success():
         print(f"\n!!! IK FAILED !!!")
-        print(f"  target position: {p_W_target}")
-        print(f"  position tolerance: ±{position_tolerance}m")
-        print(f"  orientation constraint: {R_WG_desired is not None}")
-        print(f"  base locked: {lock_base}")
         if R_WG_desired is not None:
             print(f"  theta bound: {theta_bound} rad")
         raise RuntimeError(f"IK failed for target {p_W_target}")
@@ -131,8 +107,6 @@ def get_locked_joint_positions(plant, plant_context, iiwa_model):
     """
 
     q_plant_full = plant.GetPositions(plant_context)
-
-    # Get joints to lock from FULL plant state
     base_x_joint = plant.GetJointByName("iiwa_base_x", iiwa_model)
     base_y_joint = plant.GetJointByName("iiwa_base_y", iiwa_model)
     base_z_joint = plant.GetJointByName("iiwa_base_z", iiwa_model)
