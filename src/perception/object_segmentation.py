@@ -31,7 +31,7 @@ MUG_MESH_PATH = Path("/workspaces/robman-final-proj/assets/mug/google_16k/textur
 
 MAX_ICP_ITERS = 25
 VOXEL_SIZE = 0.005
-PLATE_HEIGHT = 0.61
+PLATE_HEIGHT = 0.6
 N_SAMPLE_POINTS = 1500
             
 # downsamples the point cloud

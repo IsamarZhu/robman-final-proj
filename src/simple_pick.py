@@ -159,7 +159,10 @@ def main():
     # Start recording
     meshcat.StartRecording()
 
-    # Execute pick
+    # Execute pick and place for first object (mug)
+    print("\n" + "=" * 70)
+    print("PICKING FIRST OBJECT: MUG")
+    print("=" * 70)
     pick_object(
         meshcat,
         simulator,
@@ -181,12 +184,59 @@ def main():
         lift_time=LIFT_TIME,
     )
 
+    # Let scene settle after first pick and place
+    print("\nLetting scene settle after first pick...")
+    t = simulator.get_context().get_time()
+    simulator.AdvanceTo(t + 2.0)
+    diagram.ForcedPublish(context)
+    print("✓ Scene ready for second object")
+
+    # Detect second object (gelatin box) and compute grasp
+    print("\n" + "=" * 70)
+    print("DETECTING SECOND OBJECT: GELATIN BOX")
+    print("=" * 70)
+    X_WO_gelatin, grasp_center_xyz_gelatin, object_top_z_gelatin = detect_and_locate_object(
+        diagram,
+        context,
+        meshcat,
+        target_object="gelatin_box",
+        dbscan_eps=DBSCAN_EPS,
+        dbscan_min_samples=DBSCAN_MIN_SAMPLES,
+        grasp_offset=GRASP_OFFSET,
+    )
+
+    # Execute pick and place for second object (gelatin box)
+    print("\n" + "=" * 70)
+    print("PICKING SECOND OBJECT: GELATIN BOX")
+    print("=" * 70)
+    pick_object(
+        meshcat,
+        simulator,
+        diagram,
+        plant,
+        plant_context,
+        iiwa_model,
+        wsg_model,
+        cmd_source,
+        wsg_cmd_source,
+        grasp_center_xyz_gelatin,
+        object_top_z_gelatin,
+        approach_height=APPROACH_HEIGHT,
+        lift_height=LIFT_HEIGHT,
+        wsg_open=WSG_OPEN,
+        wsg_closed=WSG_CLOSED,
+        move_time=MOVE_TIME,
+        grasp_time=GRASP_TIME,
+        lift_time=LIFT_TIME,
+    )
+
     # Finish recording
     meshcat.StopRecording()
     meshcat.PublishRecording()
 
     print("\n" + "=" * 70)
-    print("DONE! Check Meshcat for visualization.")
+    print("DONE! Both objects picked and placed.")
+    print("Check Meshcat for visualization.")
     print("=" * 70)
     input("\nPress Enter to exit...")
 
