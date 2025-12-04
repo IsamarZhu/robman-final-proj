@@ -54,15 +54,22 @@ directives:
     file: file:///workspaces/robman-final-proj/assets/mug/mug.sdf
     default_free_body_pose:
       base_link:
-        translation: [1.35, 0.5, 0.63]
+        translation: [1.33, 0.5, 0.63]
         rotation: !Rpy { deg: [0, 0, 90] } # rotate handle away from gripper
 - add_model:
     name: gelatin_box
     file: package://manipulation/hydro/009_gelatin_box.sdf
     default_free_body_pose:
       base_link_gelatin:
-        translation: [1.45, 0.55, 0.65]
+        translation: [1.40, 0.55, 0.65]
         rotation: !Rpy { deg: [-90, 0, 130] }
+- add_model:
+    name: tomato_soup
+    file: package://manipulation/hydro/005_tomato_soup_can.sdf
+    default_free_body_pose:
+      base_link_soup:
+        translation: [1.53, 0.48, 0.7]
+        rotation: !Rpy { deg: [90, 0, 190] }
 # - add_model:
 #     name: mug2
 #     file: file:///workspaces/robman-final-proj/assets/mug/mug.sdf

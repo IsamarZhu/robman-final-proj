@@ -112,7 +112,8 @@ class ObjectDetector:
         """
         self.mesh_templates = {
             "mug": Path("/workspaces/robman-final-proj/assets/mug/google_16k/textured.obj"),
-            "gelatin_box": Path("/workspaces/robman-final-proj/assets/009_gelatin_box/google_16k/textured.obj")
+            "gelatin_box": Path("/workspaces/robman-final-proj/assets/009_gelatin_box/google_16k/textured.obj"),
+            "tomato_soup": Path("/workspaces/robman-final-proj/assets/005_tomato_soup_can/google_16k/textured.obj")
         }
         self.templates = {}
         
