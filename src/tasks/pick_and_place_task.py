@@ -35,7 +35,6 @@ class PickAndPlaceTask:
         """
         execute complete pick-and-place for a target object
         """
-        print("\n" + "=" * 70)
         print(f"PICKING OBJECT: {target_object.upper()}")
 
         # detection of object
@@ -70,5 +69,3 @@ class PickAndPlaceTask:
             grasp_time=self.grasp_time,
             lift_time=self.lift_time,
         )
-
-        print(f"{target_object.upper()} pick-and-place complete\n")

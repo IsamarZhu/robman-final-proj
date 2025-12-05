@@ -80,16 +80,13 @@ def segment_objects_clustering(pc: PointCloud, eps=0.03, min_samples=50):
     """
     xyz = pc.xyzs().T 
     
-    # clustering
     clustering = DBSCAN(eps=eps, min_samples=min_samples).fit(xyz)
-    labels = clustering.labels_
-    
-    # separating into individual point clouds
+    labels = clustering.labels_    
     object_clouds = []
     unique_labels = set(labels)
     
     for label in unique_labels:
-        if label == -1:  # skip noise points
+        if label == -1:
             continue
         
         mask = (labels == label)

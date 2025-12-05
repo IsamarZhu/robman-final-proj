@@ -1,7 +1,3 @@
-"""
-Inverse kinematics utilities for mobile manipulator with base and joint locking.
-"""
-
 import numpy as np
 from pydrake.all import (
     InverseKinematics,

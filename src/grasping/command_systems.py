@@ -18,8 +18,6 @@ from pydrake.geometry import (
 )
 import numpy as np
 class JointPositionCommandSource(LeafSystem):
-    """Outputs [q_desired, v_desired] for iiwa_arm.desired_state"""
-
     def __init__(self, q_initial: np.ndarray):
         super().__init__()
         q_initial = np.copy(q_initial).reshape(-1)
@@ -44,8 +42,6 @@ class JointPositionCommandSource(LeafSystem):
 
 
 class WsgCommandSource(LeafSystem):
-    """Outputs desired gripper width"""
-
     def __init__(self, initial_width: float):
         super().__init__()
         self._width = float(initial_width)

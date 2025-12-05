@@ -1,9 +1,3 @@
-"""
-Simplified object picking demo using general object segmentation + ICP pose estimation.
-This approach works for any object (mug, gelatin box, etc.) as long as a mesh template is
-available.
-"""
-
 from pathlib import Path
 from setup import SimulationEnvironment
 from tasks import PickAndPlaceTask
@@ -13,25 +7,25 @@ from tasks import PickAndPlaceTask
 # Configuration
 # --------------------------------------------------------------------------- #
 
-SCENARIO_PATH = Path("/workspaces/robman-final-proj/src/grasp.yaml")
+SCENARIO_PATH = Path("/workspaces/robman-final-proj/src/cafe_scenario.yaml")
 
 # motion parameters
-APPROACH_HEIGHT = 0.15  # Height above object to approach from (meters)
-LIFT_HEIGHT = 0.20      # Height to lift after grasp (meters)
-GRASP_OFFSET = 0.00     # Offset from top of object (0 = grasp at top)
+APPROACH_HEIGHT = 0.15
+LIFT_HEIGHT = 0.2
+GRASP_OFFSET = 0.00
 
 # gripper settings
 WSG_OPEN = 0.107
-WSG_CLOSED = 0.015  # Tighter closure to maintain grip during descent
+WSG_CLOSED = 0.015
 
 # timing
-MOVE_TIME = 2.5         # Time for each motion phase (seconds)
-GRASP_TIME = 2.0        # Time to close gripper (seconds)
-LIFT_TIME = 4.0         # Time to lift object (slower to be careful)
+MOVE_TIME = 2.5
+GRASP_TIME = 2.0
+LIFT_TIME = 4.0 
 
 # segmentation parameters
-DBSCAN_EPS = 0.03       # DBSCAN clustering epsilon
-DBSCAN_MIN_SAMPLES = 50 # DBSCAN min samples per cluster
+DBSCAN_EPS = 0.03
+DBSCAN_MIN_SAMPLES = 50
 
 # objects to pick (in order)
 OBJECTS_TO_PICK = ["mug", "gelatin_box", "tomato_soup"]
@@ -70,10 +64,6 @@ def main():
 
     env.meshcat.StopRecording()
     env.meshcat.PublishRecording()
-
-    print("\n" + "=" * 70)
-    print(f"DONE! All {len(OBJECTS_TO_PICK)} objects picked and placed.")
-    input("\nPress Enter to exit...")
 
 
 if __name__ == "__main__":

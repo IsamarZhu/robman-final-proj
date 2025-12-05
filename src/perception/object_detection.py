@@ -1,7 +1,3 @@
-"""
-Object detection and grasp pose computation using point cloud segmentation and ICP.
-"""
-
 import numpy as np
 from pydrake.all import Rgba, RigidTransform
 from pydrake.geometry import Box
@@ -55,12 +51,10 @@ def detect_and_locate_object(
             rgba=colors[i % len(colors)],
         )
 
-        # Match against templates
-        print(f"\nCluster {i}:")
+        print(f"\ncluster {i}:")
         name, pose, score = detector.match_object(obj_cloud)
-        print(f"  Best match: {name} (score: {score:.6f})")
+        print(f"  best match: {name} (score: {score:.6f})")
 
-        # Check if this is our target object and has best score
         if name == target_object and score < best_match_score:
             best_match = name
             best_match_score = score

@@ -1,7 +1,3 @@
-"""
-Motion primitives for robotic manipulation tasks.
-"""
-
 import numpy as np
 from pydrake.all import (
     Rgba,
