@@ -20,6 +20,11 @@
             <size>0.4 0.3 0.01</size>
           </box>
         </geometry>
+        <drake:proximity_properties>
+          <drake:mu_dynamic>0.5</drake:mu_dynamic>
+          <drake:mu_static>0.5</drake:mu_static>
+          <drake:rigid_hydroelastic/>
+        </drake:proximity_properties>
       </collision>
       <visual name="box_visual">
         <geometry>

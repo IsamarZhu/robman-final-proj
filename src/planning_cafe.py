@@ -22,19 +22,19 @@ import numpy as np
 
 # Motion parameters
 MOVEMENT_SPEED = 0.5  # m/s
-ROTATION_SPEED = 0.1  # rad/s
-INITIAL_DELAY = 1.0   # seconds
+ROTATION_SPEED = 0.02  # rad/s
+INITIAL_DELAY = 5.0  # seconds
 
 def simulate_scenario():
     meshcat = StartMeshcat()
-    scenario_file = Path("/workspaces/robman-final-proj/src/grasp.yaml")
+    scenario_file = Path("/workspaces/robman-final-proj/src/cafe_scenario.yaml")
     scenario = LoadScenario(filename=str(scenario_file))
     
     # Initial base positions (x, y, z) + 7 arm joints = 10 total
     # do not manually change arm_positions[0]
-    arm_positions = [0.0, 0.1, 0.0, -0.9, 0.6, 1.7, 0.0]  # 7 arm joints
+    arm_positions = [1.57, 0.1, 0.0, -0.9, -0.1, 1.7, 0.0]  # 7 arm joints
     
-    start_config = (1.4, 0.0, 0.0)
+    start_config = (1.4, 0.0, 1.57)
     end_config = (1.4, 0.0, 0.0)
     
     # Create builder and station

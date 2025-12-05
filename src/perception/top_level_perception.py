@@ -9,8 +9,8 @@ from PIL import Image
 import cv2
 import sys
 
-TABLE_INTENSITY_MIN = 145
-TABLE_INTENSITY_MAX = 150
+TABLE_INTENSITY_MIN = 135
+TABLE_INTENSITY_MAX = 140
 SIZE_TOLERANCE = 0.07
 
 # table size in pixels

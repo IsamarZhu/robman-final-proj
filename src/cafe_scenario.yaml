@@ -54,15 +54,24 @@ directives:
     file: file:///workspaces/robman-final-proj/assets/mug/mug.sdf
     default_free_body_pose:
       base_link:
-        translation: [1.4, 0.5, 0.63]
+        translation: [1.33, 0.5, 0.63]
         rotation: !Rpy { deg: [0, 0, 90] } # rotate handle away from gripper
-# - add_model:
-#     name: gelatin_box
-#     file: package://manipulation/hydro/009_gelatin_box.sdf
-#     default_free_body_pose:
-#       base_link_gelatin:
-#         translation: [1.45, 0.6, 0.65]
-#         rotation: !Rpy { deg: [-90, 0, 130] }
+        
+- add_model:
+    name: gelatin_box
+    file: file:///workspaces/robman-final-proj/assets/gelatin_box.sdf
+    default_free_body_pose:
+      base_link_gelatin:
+        translation: [1.40, 0.55, 0.67]
+        rotation: !Rpy { deg: [-90, 0, 130] }
+
+- add_model:
+    name: tomato_soup
+    file: package://manipulation/hydro/005_tomato_soup_can.sdf
+    default_free_body_pose:
+      base_link_soup:
+        translation: [1.53, 0.48, 0.7]
+        rotation: !Rpy { deg: [90, 0, 190] }
 # - add_model:
 #     name: mug2
 #     file: file:///workspaces/robman-final-proj/assets/mug/mug.sdf
@@ -83,16 +92,16 @@ directives:
     name: iiwa_arm
     file: package://manipulation/mobile_iiwa14_primitive_collision.urdf
     default_joint_positions:
-        iiwa_joint_1: [0.0]
+        iiwa_joint_1: [1.57]
         iiwa_joint_2: [0.1]
-        iiwa_joint_3: [1.5]
+        iiwa_joint_3: [0]
         iiwa_joint_4: [-0.9]
         iiwa_joint_5: [-0.1]
         iiwa_joint_6: [1.7]
         iiwa_joint_7: [0]
-        iiwa_base_x: [1.4]
+        iiwa_base_x: [1.3]
         iiwa_base_y: [0]
-        iiwa_base_z: [0]
+        iiwa_base_z: [0.1]
 
 - add_model:
     name: wsg_arm
@@ -111,8 +120,8 @@ directives:
     parent: iiwa_arm::iiwa_link_1
     child: tray::tray_link
     X_PC:
-        translation: [0, 0.5, 0.45]
-        rotation: !Rpy { deg: [0, 180, 0]}
+        translation: [0.5, -0.1, 0.33]
+        rotation: !Rpy { deg: [0, 180, -90]}
 - add_model:
     name: person
     file: file:///workspaces/robman-final-proj/assets/VisitorKidSit/model.sdf
@@ -129,8 +138,8 @@ directives:
     name: camera0_origin
     X_PF:
         base_frame: tray::tray_link
-        rotation: !Rpy { deg: [-40.0, 0.0, 90.0]}
-        translation: [0.3, 0, -.2]
+        rotation: !Rpy { deg: [-47.0, 0.0, 90.0]}
+        translation: [0.3, 0, -.17]
 - add_model:
     name: camera0
     file: package://manipulation/camera_box.sdf
@@ -142,8 +151,8 @@ directives:
     name: camera1_origin
     X_PF:
         base_frame: tray::tray_link
-        rotation: !Rpy { deg: [-40.0, 0.0, 180.0]}
-        translation: [0, 0.27, -.2]
+        rotation: !Rpy { deg: [-47.0, 0.0, 180.0]}
+        translation: [0, 0.27, -.17]
 - add_model:
     name: camera1
     file: package://manipulation/camera_box.sdf
@@ -156,7 +165,7 @@ directives:
     X_PF:
         base_frame: tray::tray_link
         rotation: !Rpy { deg: [-47.0, 0.0, 270.0]}
-        translation: [-0.3, 0, -.2]
+        translation: [-0.3, 0, -.17]
 - add_model:
     name: camera2
     file: package://manipulation/camera_box.sdf

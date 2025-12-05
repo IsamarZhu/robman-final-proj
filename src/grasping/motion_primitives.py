@@ -63,6 +63,10 @@ def pick_object(
     place_offset_x = -0.40
     place_offset_y = 0.3
 
+    # ignore for now; maybe reconciliation
+    # place_offset_x = 0.3  # Offset in x from current base position
+    # place_offset_y = 0.4   # Offset in y from current base position
+
     place_x = current_base_x + place_offset_x
     place_y = current_base_y + place_offset_y
     place_z = p_lift_higher[2]

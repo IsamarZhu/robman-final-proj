@@ -58,7 +58,7 @@ directives:
         rotation: !Rpy { deg: [0, 0, 90] } # rotate handle away from gripper
 - add_model:
     name: gelatin_box
-    file: package://manipulation/hydro/009_gelatin_box.sdf
+    file: file:///workspaces/robman-final-proj/assets/gelatin_box.sdf
     default_free_body_pose:
       base_link_gelatin:
         translation: [1.40, 0.55, 0.65]

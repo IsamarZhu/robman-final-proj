@@ -12,6 +12,7 @@ from pathing.viz import visualize_grid_in_meshcat
 TABLE_LENGTH = 0.9
 TABLE_WIDTH = 1.3125
 ROBOT_RADIUS = 0.35 
+TRAY_OFFSET_THETA = 0
 
 class Grid:
     """
@@ -419,10 +420,10 @@ class PathFollower(LeafSystem):
         
         vx = (x1 - x0) / (t1 - t0) if t1 > t0 else 0.0
         vy = (y1 - y0) / (t1 - t0) if t1 > t0 else 0.0
-        
+
         # Set arm joint 0 based on current segment direction
         arm_positions = self.initial_arm_positions.copy()
-        
+
         # Helper function to normalize angle difference to [-pi, pi]
         def angle_diff(target, current):
             diff = target - current
@@ -432,7 +433,7 @@ class PathFollower(LeafSystem):
             while diff < -np.pi:
                 diff += 2 * np.pi
             return diff
-        
+
         # Helper function to normalize angle to [-pi, pi]
         def normalize_angle(angle):
             while angle > np.pi:
@@ -440,14 +441,14 @@ class PathFollower(LeafSystem):
             while angle < -np.pi:
                 angle += 2 * np.pi
             return angle
-        
+
         # Calculate the direction angle for the current segment
         dx = x1 - x0
         dy = y1 - y0
-        
+
         if abs(dx) > 1e-6 or abs(dy) > 1e-6:
             # Use the direction of current segment with 180 degree offset
-            segment_theta = np.arctan2(dy, dx) + np.pi/2
+            segment_theta = np.arctan2(dy, dx) + TRAY_OFFSET_THETA
             segment_theta = normalize_angle(segment_theta)
         else:
             # No movement in this segment
@@ -478,12 +479,12 @@ class PathFollower(LeafSystem):
         
         arm_positions[0] = normalize_angle(current_angle)
         self.previous_angle = normalize_angle(current_angle)
-        
+
         mobile_base_positions = [current_x, current_y, 0.1]
         all_positions = mobile_base_positions + arm_positions
         mobile_base_velocities = [vx, vy, 0.0]
         all_velocities = mobile_base_velocities + [0.0] * 7
-        
+
         desired_state = all_positions + all_velocities
         output.SetFromVector(desired_state)
 
@@ -516,7 +517,7 @@ def estimate_runtime(start_config, table_goals, all_paths):
             total_distance += np.sqrt(dx**2 + dy**2)
             
             # Calculate rotation needed for this segment
-            segment_angle = np.arctan2(dy, dx) + np.pi/2
+            segment_angle = np.arctan2(dy, dx) + TRAY_OFFSET_THETA
             angle_diff = abs(segment_angle - current_theta)
             # Normalize to [0, pi]
             while angle_diff > np.pi:
@@ -530,7 +531,7 @@ def estimate_runtime(start_config, table_goals, all_paths):
                 total_distance += np.sqrt(dx**2 + dy**2)
                 
                 # Rotation between segments
-                next_segment_angle = np.arctan2(dy, dx) + np.pi/2
+                next_segment_angle = np.arctan2(dy, dx) + TRAY_OFFSET_THETA
                 angle_diff = abs(next_segment_angle - segment_angle)
                 while angle_diff > np.pi:
                     angle_diff = 2*np.pi - angle_diff
