@@ -27,7 +27,7 @@ INITIAL_DELAY = 5.0  # seconds
 
 def simulate_scenario():
     meshcat = StartMeshcat()
-    scenario_file = Path("/workspaces/robman-final-proj/src/cafe_scenario.yaml")
+    scenario_file = Path("/workspaces/robman-final-proj/src/environment/cafe_scenario.yaml")
     scenario = LoadScenario(filename=str(scenario_file))
     
     # Initial base positions (x, y, z) + 7 arm joints = 10 total

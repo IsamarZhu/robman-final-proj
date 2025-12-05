@@ -68,22 +68,20 @@ def pick_object(
     place_z = p_lift_higher[2]
     p_place_target = np.array([place_x, place_y, place_z])
 
-    meshcat.SetObject("traj/approach", Box(0.015, 0.015, 0.015), Rgba(0, 1, 0, 0.5))
-    meshcat.SetTransform("traj/approach", RigidTransform(p_approach))
+    # meshcat.SetObject("traj/approach", Box(0.015, 0.015, 0.015), Rgba(0, 1, 0, 0.5))
+    # meshcat.SetTransform("traj/approach", RigidTransform(p_approach))
 
-    meshcat.SetObject("traj/grasp", Box(0.015, 0.015, 0.015), Rgba(1, 0, 0, 0.8))
-    meshcat.SetTransform("traj/grasp", RigidTransform(p_grasp))
+    # meshcat.SetObject("traj/grasp", Box(0.015, 0.015, 0.015), Rgba(1, 0, 0, 0.8))
+    # meshcat.SetTransform("traj/grasp", RigidTransform(p_grasp))
 
-    meshcat.SetObject("traj/lift", Box(0.015, 0.015, 0.015), Rgba(0, 0, 1, 0.5))
-    meshcat.SetTransform("traj/lift", RigidTransform(p_lift))
+    # meshcat.SetObject("traj/lift", Box(0.015, 0.015, 0.015), Rgba(0, 0, 1, 0.5))
+    # meshcat.SetTransform("traj/lift", RigidTransform(p_lift))
 
-    meshcat.SetObject("traj/lift_higher", Box(0.015, 0.015, 0.015), Rgba(1, 1, 0, 0.5))
-    meshcat.SetTransform("traj/lift_higher", RigidTransform(p_lift_higher))
+    # meshcat.SetObject("traj/lift_higher", Box(0.015, 0.015, 0.015), Rgba(1, 1, 0, 0.5))
+    # meshcat.SetTransform("traj/lift_higher", RigidTransform(p_lift_higher))
 
-    meshcat.SetObject("traj/place_target", Box(0.03, 0.03, 0.03), Rgba(1, 0, 1, 0.8))
-    meshcat.SetTransform("traj/place_target", RigidTransform(R_WG_down, p_place_target))
-
-    print("\nsolving ik for poses")
+    # meshcat.SetObject("traj/place_target", Box(0.03, 0.03, 0.03), Rgba(1, 0, 1, 0.8))
+    # meshcat.SetTransform("traj/place_target", RigidTransform(R_WG_down, p_place_target))
 
     base_positions_lock = get_locked_joint_positions(plant, plant_context, iiwa_model)
     q_start = plant.GetPositions(plant_context, iiwa_model)
@@ -169,7 +167,6 @@ def pick_object(
 
     # motion helper with smooth trajectory interpolation
     def move_to_smooth(q_des, gripper_width, duration, num_steps=50, monitor_collision=False, baseline_force=0.0):
-        """smoothly interpolate to joint configuration with specified gripper width"""
         q_current = plant.GetPositions(plant_context, iiwa_model)
 
         times = [0.0, duration]

@@ -7,7 +7,7 @@ from tasks import PickAndPlaceTask
 # Configuration
 # --------------------------------------------------------------------------- #
 
-SCENARIO_PATH = Path("/workspaces/robman-final-proj/src/cafe_scenario.yaml")
+SCENARIO_PATH = Path("/workspaces/robman-final-proj/src/environment/cafe_scenario.yaml")
 
 # motion parameters
 APPROACH_HEIGHT = 0.15
