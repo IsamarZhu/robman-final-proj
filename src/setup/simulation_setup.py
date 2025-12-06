@@ -29,6 +29,7 @@ class SimulationEnvironment:
     def build(self):
 
         self.meshcat = StartMeshcat()
+        self.meshcat.SetProperty("/Grid", "visible", False)
         with open(self.scenario_path, "r") as f:
             scenario_yaml = f.read()
         scenario = LoadScenario(data=scenario_yaml)

@@ -107,19 +107,32 @@ class ObjectDetector:
         """
         we preload templates for the known objects that can appear
         """
-        self.mesh_templates = {
-            "mug": Path("/workspaces/robman-final-proj/assets/mug/google_16k/textured.obj"),
-            "gelatin_box": Path("/workspaces/robman-final-proj/assets/009_gelatin_box/google_16k/textured.obj"),
-            "tomato_soup": Path("/workspaces/robman-final-proj/assets/005_tomato_soup_can/google_16k/textured.obj")
-        }
-        self.templates = {}
         
+        ############ scenario_one #################
+        # self.mesh_templates = {
+        #     "mug": Path("/workspaces/robman-final-proj/assets/mug/google_16k/textured.obj"),
+        #     "gelatin_box": Path("/workspaces/robman-final-proj/assets/009_gelatin_box/google_16k/textured.obj"),
+        #     "tomato_soup": Path("/workspaces/robman-final-proj/assets/005_tomato_soup_can/google_16k/textured.obj")
+        # }
+        
+        ############ scenario_two #################
+        self.mesh_templates = {
+            "potted_meat": Path("/workspaces/robman-final-proj/assets/010_potted_meat_can/google_16k/textured.obj"),
+            "apple": Path("/workspaces/robman-final-proj/assets/apple/google_16k/textured.obj")
+        }
+        
+        ############ scenario_three #################
+        
+        
+        
+        self.templates = {}
         for name, mesh_path in self.mesh_templates.items():
             mesh = trimesh.load(mesh_path)
 
             # scale down mug mesh by 0.8
             if name == "mug":
                 mesh.apply_scale(0.8)
+
 
             cloud_points, _ = trimesh.sample.sample_surface(mesh, 1000)
 
