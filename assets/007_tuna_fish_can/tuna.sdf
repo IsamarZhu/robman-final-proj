@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <model name="tuna">
+    <link name="base_link">
+
+      <!-- Rough inertial properties -->
+      <inertial>
+        <mass>0.1</mass>
+        <inertia>
+          <ixx>1e-2</ixx>
+          <iyy>1e-2</iyy>
+          <izz>1e-2</izz>
+        </inertia>
+      </inertial>
+
+      <!-- Visual mesh -->
+      <visual name="visual">
+        <geometry>
+          <mesh>
+            <uri>google_16k/textured.obj</uri>
+          </mesh>
+        </geometry>
+      </visual>
+
+      <!-- Collision (same mesh for simplicity) -->
+      <collision name="collision">
+        <geometry>
+          <mesh>
+            <uri>google_16k/textured.obj</uri>
+          </mesh>
+        </geometry>
+      </collision>
+
+    </link>
+  </model>
+</sdf>

@@ -116,13 +116,18 @@ class ObjectDetector:
         # }
         
         ############ scenario_two #################
-        self.mesh_templates = {
-            "potted_meat": Path("/workspaces/robman-final-proj/assets/010_potted_meat_can/google_16k/textured.obj"),
-            "apple": Path("/workspaces/robman-final-proj/assets/apple/google_16k/textured.obj")
-        }
+        # self.mesh_templates = {
+        #     "potted_meat": Path("/workspaces/robman-final-proj/assets/010_potted_meat_can/google_16k/textured.obj"),
+        #     "apple": Path("/workspaces/robman-final-proj/assets/apple/google_16k/textured.obj"),
+        #     "master_chef": Path("/workspaces/robman-final-proj/assets/master_chef/google_16k/textured.obj"),
+            
+        # }
         
         ############ scenario_three #################
-        
+        self.mesh_templates = {
+            "pudding": Path("/workspaces/robman-final-proj/assets/008_pudding_box/google_16k/textured.obj"),
+            "tuna": Path("/workspaces/robman-final-proj/assets/007_tuna_fish_can/google_16k/textured.obj"),
+        }
         
         
         self.templates = {}
@@ -132,6 +137,8 @@ class ObjectDetector:
             # scale down mug mesh by 0.8
             if name == "mug":
                 mesh.apply_scale(0.8)
+            elif name == "pudding":
+                mesh.apply_scale(0.75)
 
 
             cloud_points, _ = trimesh.sample.sample_surface(mesh, 1000)

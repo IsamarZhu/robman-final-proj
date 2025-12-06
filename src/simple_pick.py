@@ -7,7 +7,7 @@ from tasks import PickAndPlaceTask
 # Configuration
 # --------------------------------------------------------------------------- #
 
-SCENARIO_PATH = Path("/workspaces/robman-final-proj/src/environment/scenario_two.yaml")
+SCENARIO_PATH = Path("/workspaces/robman-final-proj/src/environment/scenario_three.yaml")
 
 # motion parameters
 APPROACH_HEIGHT = 0.15
@@ -29,7 +29,8 @@ DBSCAN_MIN_SAMPLES = 50
 
 # objects to pick (in order)
 # OBJECTS_TO_PICK = ["mug", "gelatin_box", "tomato_soup"]
-OBJECTS_TO_PICK = ["potted_meat", "apple"]
+# OBJECTS_TO_PICK = ["potted_meat", "apple", "master_chef"]
+OBJECTS_TO_PICK = ["pudding", "tuna"]
 
 
 # --------------------------------------------------------------------------- #

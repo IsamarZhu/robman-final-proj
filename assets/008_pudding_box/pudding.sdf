@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <model name="pudding">
+    <link name="base_link">
+
+      <!-- Rough inertial properties -->
+      <inertial>
+        <mass>0.1</mass>
+        <inertia>
+          <ixx>1e-3</ixx>
+          <iyy>1e-3</iyy>
+          <izz>1e-3</izz>
+        </inertia>
+      </inertial>
+
+      <!-- Visual mesh -->
+      <visual name="visual">
+        <geometry>
+          <mesh>
+            <uri>google_16k/textured.obj</uri>
+            <scale>0.75 0.75 0.75</scale>
+          </mesh>
+        </geometry>
+      </visual>
+
+      <!-- Collision (same mesh for simplicity) -->
+      <collision name="collision">
+        <geometry>
+          <mesh>
+            <uri>google_16k/textured.obj</uri>
+            <scale>0.75 0.75 0.75</scale>
+          </mesh>
+        </geometry>
+      </collision>
+
+    </link>
+  </model>
+</sdf>

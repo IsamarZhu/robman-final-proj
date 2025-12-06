@@ -11,28 +11,28 @@ directives:
         
 #################### OBJECTS ON TRAY ######################
 - add_model:
-    name: potted_meat
-    file: package://manipulation/hydro/010_potted_meat_can.sdf
+    name: pudding
+    file: file:///workspaces/robman-final-proj/assets/008_pudding_box/pudding.sdf
     default_free_body_pose:
-      base_link_meat:
-        translation: [-2.7, 4.55, 0.72]
-        rotation: !Rpy { deg: [90, 0, 45] } # rotate handle away from gripper
+      base_link:
+        translation: [-2.7, 4.55, 0.71]
+        rotation: !Rpy { deg: [0, 0, 30] } # rotate handle away from gripper
         
 - add_model:
-    name: apple
-    file: file:///workspaces/robman-final-proj/assets/apple/apple.sdf
+    name: tuna
+    file: file:///workspaces/robman-final-proj/assets/007_tuna_fish_can/tuna.sdf
     default_free_body_pose:
       base_link:
         translation: [-2.55, 4.55, 0.67]
-        rotation: !Rpy { deg: [-90, 0, 130] }
+        rotation: !Rpy { deg: [0, 0, 0] }
 
-- add_model:
-    name: master_chef
-    file: file:///workspaces/robman-final-proj/assets/master_chef/master_chef.sdf
-    default_free_body_pose:
-      base_link:
-        translation: [-2.45, 4.47, 0.7]
-        rotation: !Rpy { deg: [90, 0, 190] }
+# - add_model:
+#     name: master_chef
+#     file: file:///workspaces/robman-final-proj/assets/master_chef/master_chef.sdf
+#     default_free_body_pose:
+#       base_link:
+#         translation: [-2.45, 4.47, 0.7]
+#         rotation: !Rpy { deg: [90, 0, 190] }
 
 
 
