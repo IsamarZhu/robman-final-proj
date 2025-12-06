@@ -109,11 +109,11 @@ class ObjectDetector:
         """
         
         ############ scenario_one #################
-        # self.mesh_templates = {
-        #     "mug": Path("/workspaces/robman-final-proj/assets/mug/google_16k/textured.obj"),
-        #     "gelatin_box": Path("/workspaces/robman-final-proj/assets/009_gelatin_box/google_16k/textured.obj"),
-        #     "tomato_soup": Path("/workspaces/robman-final-proj/assets/005_tomato_soup_can/google_16k/textured.obj")
-        # }
+        self.mesh_templates = {
+            "mug": Path("/workspaces/robman-final-proj/assets/mug/google_16k/textured.obj"),
+            "gelatin_box": Path("/workspaces/robman-final-proj/assets/009_gelatin_box/google_16k/textured.obj"),
+            "tomato_soup": Path("/workspaces/robman-final-proj/assets/005_tomato_soup_can/google_16k/textured.obj")
+        }
         
         ############ scenario_two #################
         # self.mesh_templates = {
@@ -124,10 +124,10 @@ class ObjectDetector:
         # }
         
         ############ scenario_three #################
-        self.mesh_templates = {
-            "pudding": Path("/workspaces/robman-final-proj/assets/008_pudding_box/google_16k/textured.obj"),
-            "tuna": Path("/workspaces/robman-final-proj/assets/007_tuna_fish_can/google_16k/textured.obj"),
-        }
+        # self.mesh_templates = {
+        #     "pudding": Path("/workspaces/robman-final-proj/assets/008_pudding_box/google_16k/textured.obj"),
+        #     "tuna": Path("/workspaces/robman-final-proj/assets/007_tuna_fish_can/google_16k/textured.obj"),
+        # }
         
         
         self.templates = {}
