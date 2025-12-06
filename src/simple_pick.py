@@ -59,16 +59,16 @@ def main():
     env.meshcat.StartRecording()
     
     # # executing pick-and-place for each object
-    for i, obj_name in enumerate(OBJECTS_TO_PICK):
-        task.execute(obj_name)
-        if i < len(OBJECTS_TO_PICK) - 1:
-            env.settle_scene(duration=2.0)
+    # for i, obj_name in enumerate(OBJECTS_TO_PICK):
+    #     task.execute(obj_name)
+    #     if i < len(OBJECTS_TO_PICK) - 1:
+    #         env.settle_scene(duration=2.0)
 
-    # from state_machine.state_machine import CafeStateMachine
+    from state_machine.state_machine import CafeStateMachine
 
-    # state_machine = CafeStateMachine(env)
-    # env.meshcat.StartRecording()
-    # state_machine.run()
+    state_machine = CafeStateMachine(env)
+    env.meshcat.StartRecording()
+    state_machine.run()
     env.meshcat.StopRecording()
     env.meshcat.PublishRecording()
 
