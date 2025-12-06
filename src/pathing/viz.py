@@ -1,7 +1,15 @@
 from pydrake.geometry import Box, Rgba
 from pydrake.math import RigidTransform, RotationMatrix
 import numpy as np
-
+import cv2
+from pathlib import Path
+from perception.config import (
+    CORNER_EXCLUSION_SIZE,
+    CROP_X_START,
+    CROP_X_END,
+    CROP_Y_START,
+    CROP_Y_END
+)
 
 def visualize_perceived_tables(tables, meshcat):
     """
@@ -261,3 +269,58 @@ def visualize_path(meshcat, path, color=None, label="path", show_orientations=Fa
             meshcat.SetTransform(arrow_path, arrow_transform)
     
     print(f"Visualized path '{label}' with {len(path)} waypoints")
+
+
+def visualize_scene_detection(station, station_context, tables, obstacles):
+    """
+    Create visualization of both tables and obstacles.
+    """
+    topview_camera_depth = station.GetOutputPort("topview_camera.depth_image").Eval(station_context)
+    depth_array = np.copy(topview_camera_depth.data).reshape(
+        (topview_camera_depth.height(), topview_camera_depth.width())
+    )
+    depth_array_cropped = depth_array[CROP_Y_START:CROP_Y_END, CROP_X_START:CROP_X_END]
+    
+    # Normalize for visualization
+    depth_array_vis = np.copy(depth_array_cropped)
+    max_valid_depth = 15.0
+    depth_array_vis[np.isinf(depth_array_vis)] = max_valid_depth
+    depth_min = np.min(depth_array_vis)
+    depth_max = np.max(depth_array_vis)
+    if depth_max > depth_min:
+        depth_normalized = 255 - ((depth_array_vis - depth_min) / (depth_max - depth_min) * 255)
+    else:
+        depth_normalized = np.zeros_like(depth_array_vis)
+    
+    result_img = cv2.cvtColor(depth_normalized.astype(np.uint8), cv2.COLOR_GRAY2BGR)
+    
+    # Draw exclusion zone in gray
+    height, width = depth_array_cropped.shape
+    cv2.rectangle(result_img, 
+                  (width-CORNER_EXCLUSION_SIZE, 0), 
+                  (width, CORNER_EXCLUSION_SIZE), 
+                  (128, 128, 128), 2)
+    cv2.putText(result_img, "EXCLUDED", 
+                (width-CORNER_EXCLUSION_SIZE+5, 20), 
+                cv2.FONT_HERSHEY_SIMPLEX, 0.4, (128, 128, 128), 1)
+    
+    # Draw tables in green
+    for table in tables:
+        box = table['box_corners']
+        cv2.drawContours(result_img, [box], 0, (0, 255, 0), 2)
+        cx, cy = table['center']
+        cv2.putText(result_img, f"Table {table['id']}", (int(cx), int(cy)), 
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+    
+    # Draw obstacles in red
+    for obstacle in obstacles:
+        # Draw convex hull for better visualization
+        cv2.drawContours(result_img, [obstacle['hull']], 0, (0, 0, 255), 2)
+        cx, cy = obstacle['center']
+        cv2.circle(result_img, (int(cx), int(cy)), 5, (0, 0, 255), -1)
+        cv2.putText(result_img, f"Obj {obstacle['id']}", (int(cx), int(cy) - 10), 
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 255), 1)
+    
+    output_path = Path("/workspaces/robman-final-proj/scene_detection.png")
+    cv2.imwrite(str(output_path), result_img)
+    print(f"\nScene detection saved to: {output_path}")

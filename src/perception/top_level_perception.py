@@ -4,25 +4,9 @@ from pydrake.perception import DepthImageToPointCloud
 from pydrake.math import RigidTransform
 from pydrake.all import PointCloud
 import numpy as np
-from pathlib import Path
-from PIL import Image
-import cv2
-import sys
-
-TABLE_INTENSITY_MIN = 135
-TABLE_INTENSITY_MAX = 140
-SIZE_TOLERANCE = 0.07
-
-# table size in pixels
-TABLE_WIDTH = 45
-TABLE_LENGTH = 66
-TABLE_DEPTH = 11.248
-
-
-CROP_X_START = 80  # left edge
-CROP_Y_START = 0   # top edge
-CROP_X_END = 560    # right edge
-CROP_Y_END = 480    # bottom edge
+from perception.obstacle_detection import detect_obstacles_from_img
+from perception.table_detection import detect_tables_from_img
+from perception.config import CROP_X_START, CROP_X_END, CROP_Y_START, CROP_Y_END
 
 
 def remove_table_points(point_cloud: PointCloud) -> PointCloud:
@@ -137,7 +121,7 @@ def pixel_to_world_topview(pixel_x, pixel_y, depth_value, camera_z=12.0, camera_
     
     return (world_x, world_y, world_z)
 
-def perceive_tables(station, station_context):
+def perceive_scene(station, station_context):
     """
     Perceive tables from the topview camera depth image.
     
@@ -147,6 +131,7 @@ def perceive_tables(station, station_context):
     
     Returns:
         List of table dictionaries with both pixel and world coordinates
+        List of obstacle dictionaries with both pixel and world coordinates
     """
     topview_camera_depth = station.GetOutputPort("topview_camera.depth_image").Eval(station_context)
     depth_array = np.copy(topview_camera_depth.data).reshape(
@@ -155,6 +140,7 @@ def perceive_tables(station, station_context):
     depth_array_cropped = depth_array[CROP_Y_START:CROP_Y_END, CROP_X_START:CROP_X_END]
 
     tables = detect_tables_from_img(depth_array_cropped)
+    obstacles = detect_obstacles_from_img(depth_array_cropped)
     
     for table in tables:
         cx_pixel, cy_pixel = table['center']
@@ -163,7 +149,10 @@ def perceive_tables(station, station_context):
         w, h = table['size']
         table['corner_world'] = []
         for corner in table['box_corners']:
-            corner_depth = depth_array_cropped[int(corner[1]), int(corner[0])]
+            # Clamp coordinates to valid range
+            corner_x = int(np.clip(corner[0], 0, depth_array_cropped.shape[1] - 1))
+            corner_y = int(np.clip(corner[1], 0, depth_array_cropped.shape[0] - 1))
+            corner_depth = depth_array_cropped[corner_y, corner_x]
             corner_world = pixel_to_world_topview(corner[0], corner[1], corner_depth)
             table['corner_world'].append(corner_world)
         
@@ -186,120 +175,31 @@ def perceive_tables(station, station_context):
         
         table['angle_radians'] = world_angle
     
-    return tables
-
-def detect_tables_from_img(depth_array):
-    """
-    filter by depth intensity and then by expected size
-    """
-    depth_array_vis = np.copy(depth_array)
-    max_valid_depth = 15.0
-    depth_array_vis[np.isinf(depth_array_vis)] = max_valid_depth
-
-    depth_min = np.min(depth_array_vis)
-    depth_max = np.max(depth_array_vis)
-    if depth_max > depth_min:
-        depth_normalized = 255 - ((depth_array_vis - depth_min) / (depth_max - depth_min) * 255)
-    else:
-        depth_normalized = np.zeros_like(depth_array_vis)
-
-    # depth_image = Image.fromarray(depth_normalized.astype(np.uint8))
-    # depth_output_path = Path("/workspaces/robman-final-proj/original_depth.png")
-    # depth_image.save(depth_output_path)
-    # print(f"Cropped depth image saved to {depth_output_path}")
-    
-    thresh = np.where((depth_normalized > TABLE_INTENSITY_MIN) & (depth_normalized <= TABLE_INTENSITY_MAX), 255, 0).astype(np.uint8)
-    kernel_small = np.ones((3, 3), np.uint8)
-    thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel_small, iterations=1)
-    
-    # Save thresholded image for debugging
-    thresh_output_path = Path("/workspaces/robman-final-proj/threshold_debug.png")
-    cv2.imwrite(str(thresh_output_path), thresh)
-    
-    # Find contours of individual tables
-    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    contour_features = []
-    for cnt in contours:
-        area = cv2.contourArea(cnt)
-        if area > 2000:
-            rect = cv2.minAreaRect(cnt)
-            (cx, cy), (w, h), angle = rect
-            dim1, dim2 = sorted([w, h])
-            mask = np.zeros(depth_array.shape, dtype=np.uint8)
-            cv2.drawContours(mask, [cnt], 0, 255, -1)
-            mean_depth = np.mean(depth_array[mask > 0])
-            
-            contour_features.append({
-                'contour': cnt,
-                'area': area,
-                'dim1': dim1,
-                'dim2': dim2,
-                'depth': mean_depth,
-                'rect': rect
-            })
-    
-    if not contour_features:
-        print("No contours found!")
-        table_contours = []
+    for obstacle in obstacles:
+        cx_pixel, cy_pixel = obstacle['center']
+        center_depth = depth_array_cropped[int(cy_pixel), int(cx_pixel)]
+        obstacle['center_world'] = pixel_to_world_topview(cx_pixel, cy_pixel, center_depth)
         
-    # Filter: keep only objects that match table size
-    table_contours = []
-    
-    
-    for feat in contour_features:
-        dim1_diff = abs(feat['dim1'] - TABLE_WIDTH) / TABLE_WIDTH
-        dim2_diff = abs(feat['dim2'] - TABLE_LENGTH) / TABLE_LENGTH
-        dim1_match = dim1_diff < SIZE_TOLERANCE
-        dim2_match = dim2_diff < SIZE_TOLERANCE
+        # Convert corners to world coordinates
+        obstacle['corner_world'] = []
+        for corner in obstacle['box_corners']:
+            # Clamp coordinates to valid range
+            corner_x = int(np.clip(corner[0], 0, depth_array_cropped.shape[1] - 1))
+            corner_y = int(np.clip(corner[1], 0, depth_array_cropped.shape[0] - 1))
+            corner_depth = depth_array_cropped[corner_y, corner_x]
+            corner_world = pixel_to_world_topview(corner[0], corner[1], corner_depth)
+            obstacle['corner_world'].append(corner_world)
         
-        if dim1_match and dim2_match:
-            table_contours.append(feat['contour'])
+        # Convert hull points to world coordinates for more accurate representation
+        obstacle['hull_world'] = []
+        for point in obstacle['hull']:
+            px, py = point[0]
+            # Clamp coordinates to valid range
+            px_clamped = int(np.clip(px, 0, depth_array_cropped.shape[1] - 1))
+            py_clamped = int(np.clip(py, 0, depth_array_cropped.shape[0] - 1))
+            point_depth = depth_array_cropped[py_clamped, px_clamped]
+            point_world = pixel_to_world_topview(px, py, point_depth)
+            obstacle['hull_world'].append(point_world)
 
-    # for debugging
-    result_img = cv2.cvtColor(depth_normalized.astype(np.uint8), cv2.COLOR_GRAY2BGR)
+    return tables, obstacles
 
-    tables_info = []
-    for i, contour in enumerate(table_contours):
-        rect = cv2.minAreaRect(contour)
-        box = cv2.boxPoints(rect)
-        box = np.intp(box)
-
-        (cx, cy), (w, h), angle = rect
-        area = cv2.contourArea(contour)
-        color = (0, 255, 0)
-
-        waypoints_pixel = [
-            (box[0] + box[1]) / 2,  # midpoint of edge 0-1
-            (box[1] + box[2]) / 2,  # midpoint of edge 1-2
-            (box[2] + box[3]) / 2,  # midpoint of edge 2-3
-            (box[3] + box[0]) / 2   # midpoint of edge 3-0
-        ]
-
-        # for debugging
-        cv2.drawContours(result_img, [box], 0, color, 2)
-        cv2.drawContours(result_img, [contour], 0, (255, 0, 0), 1)
-        
-        # label
-        label = f"Table {i+1}"
-        cv2.putText(result_img, label, (int(cx), int(cy)), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-        
-        for point in waypoints_pixel:
-            cv2.circle(result_img, tuple(point.astype(int)), 3, (0, 255, 255), -1)
-        
-        tables_info.append({
-            'id': i + 1,
-            'center': (cx, cy),
-            'size': (w, h),
-            'angle': angle,
-            'area': area,
-            'box_corners': box,
-            'waypoints': waypoints_pixel
-        })
-    
-    # Table detection result
-    output_path = Path("/workspaces/robman-final-proj/table_detection.png")
-    cv2.imwrite(str(output_path), result_img)
-    print(f"\nDetection result saved to: {output_path}")
-    
-    return tables_info

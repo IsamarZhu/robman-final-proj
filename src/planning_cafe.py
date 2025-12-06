@@ -8,15 +8,19 @@ from pydrake.all import (
     ConstantVectorSource,
 )
 from manipulation.station import LoadScenario, MakeHardwareStation
-from perception.top_level_perception import perceive_tables
-from pathing.find_path import Grid, AStarPlanner, PathFollower, add_obstacles, estimate_runtime
+from perception.top_level_perception import perceive_scene
+from pathing.grid import Grid
+from pathing.find_path import PathFollower, estimate_runtime
+from pathing.astar import AStarPlanner
+from pathing.add_obstacles import add_obstacles
 
 # for debugging
 from pydrake.geometry import Rgba
 from pathing.viz import (
     visualize_grid_in_meshcat, 
     visualize_robot_config, 
-    visualize_path
+    visualize_path,
+    visualize_scene_detection
 )
 import numpy as np
 
@@ -27,15 +31,15 @@ INITIAL_DELAY = 5.0  # seconds
 
 def simulate_scenario():
     meshcat = StartMeshcat()
-    scenario_file = Path("/workspaces/robman-final-proj/src/environment/cafe_scenario.yaml")
+    scenario_file = Path("/workspaces/robman-final-proj/src/environment/scenario_one.yaml")
     scenario = LoadScenario(filename=str(scenario_file))
     
     # Initial base positions (x, y, z) + 7 arm joints = 10 total
     # do not manually change arm_positions[0]
     arm_positions = [1.57, 0.1, 0.0, -0.9, -0.1, 1.7, 0.0]  # 7 arm joints
     
-    start_config = (1.4, 0.0, 1.57)
-    end_config = (1.4, 0.0, 0.0)
+    start_config = (-4.0, 4.0, 1.57)
+    end_config = (2.3, 0, -np.pi/2)
     
     # Create builder and station
     builder = DiagramBuilder()
@@ -70,7 +74,7 @@ def simulate_scenario():
     context = simulator.get_mutable_context()
     station_context = station.GetMyContextFromRoot(context)
     
-    tables = perceive_tables(station, station_context)
+    tables, obstacles = perceive_scene(station, station_context)
     table_goals = [
         # tables[0]['waypoints_world'][2],
         (4, 4, np.pi/2),
@@ -86,7 +90,7 @@ def simulate_scenario():
         y_max=5.0, 
         resolution=0.1  # 10cm cells
     )
-    add_obstacles(grid, tables)
+    add_obstacles(grid, tables, obstacles)
     
     # Plan paths to visit each table in sequence
     planner = AStarPlanner(grid)
@@ -131,6 +135,7 @@ def simulate_scenario():
     #               label="raw_path", show_orientations=False)
     # visualize_path(meshcat, smoothed_path, color=Rgba(0.0, 0.0, 1.0, 0.9), 
     #               label="smoothed_path", show_orientations=True)
+    visualize_scene_detection(station, station_context, tables, obstacles)
     
     diagram.ForcedPublish(context)
     simulator.AdvanceTo(total_sim_time)
