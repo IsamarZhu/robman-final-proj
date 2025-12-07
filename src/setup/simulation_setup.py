@@ -26,6 +26,7 @@ class SimulationEnvironment:
         self.cmd_source = None
         self.wsg_cmd_source = None
         self.scenario_number = scenario_number
+        self.station = None
 
     def build(self):
 
@@ -37,6 +38,7 @@ class SimulationEnvironment:
 
         builder = DiagramBuilder()
         station = builder.AddSystem(MakeHardwareStation(scenario, meshcat=self.meshcat))
+        self.station = station
         self.plant = station.GetSubsystemByName("plant")
         scene_graph = station.GetSubsystemByName("scene_graph")
 

@@ -1,5 +1,13 @@
 import argparse
+import numpy as np
 from setup import SimulationEnvironment
+from pathing.find_path import plan_paths
+from perception.top_level_perception import perceive_scene
+from pydrake.geometry import Rgba
+from pathing.viz import (
+    visualize_robot_config, 
+    visualize_grid_in_meshcat
+)
 from state_machine.state_machine import CafeStateMachine
 
 # --------------------------------------------------------------------------- #
@@ -14,8 +22,47 @@ def main():
     env = SimulationEnvironment(args.scenario, wsg_open=0.107)
     env.build()
 
+    # for debugging
+    env.meshcat.SetCameraPose(
+        np.array([1, 8, 2]).reshape(3, 1),      # Camera position
+        np.array([0, 0, 0.5]).reshape(3, 1)      # Look at slightly above ground
+    )
+
     env.meshcat.StartRecording()
-    state_machine = CafeStateMachine(env)
+    station = env.station
+    station_context = station.GetMyContextFromRoot(env.context)
+    
+    tables, obstacles = perceive_scene(station, station_context)
+    start_config = env.plant.GetPositions(env.plant_context, env.iiwa_model)
+    table_centers = [table['center_world'] for table in tables]
+    
+    # Define navigation goals (positions at table edges)
+    to_visit = [
+        tables[1]['waypoints_padded'][2],
+    ]
+    all_paths = plan_paths(tables, obstacles, start_config, to_visit)
+    state_machine = CafeStateMachine(
+        env=env,
+        # Pick/place parameters
+        approach_height=0.15,
+        lift_height=0.20,
+        grasp_offset=0.00,
+        wsg_open=0.107,
+        wsg_closed=0.015,
+        move_time=2.5,
+        grasp_time=2.0,
+        lift_time=4.0,
+        # Navigation parameters
+        paths=all_paths,
+        table_centers=table_centers,
+        max_speed=0.6,
+        rotation_speed=0.5,
+        acceleration=0.3,
+        deceleration=0.3,
+    )
+     # Set paths explicitly (even though passed in constructor)
+    state_machine.set_paths(all_paths)
+    state_machine.set_table_centers(table_centers)
     state_machine.run()
     env.meshcat.StopRecording()
     env.meshcat.PublishRecording()

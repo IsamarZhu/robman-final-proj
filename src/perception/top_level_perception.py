@@ -6,7 +6,7 @@ from pydrake.all import PointCloud
 import numpy as np
 from perception.obstacle_detection import detect_obstacles_from_img
 from perception.table_detection import detect_tables_from_img
-from perception.config import CROP_X_START, CROP_X_END, CROP_Y_START, CROP_Y_END
+from perception.config import CROP_X_START, CROP_X_END, CROP_Y_START, CROP_Y_END, ROBOT_RADIUS
 
 
 def remove_table_points(point_cloud: PointCloud) -> PointCloud:
@@ -167,6 +167,27 @@ def perceive_scene(station, station_context):
                 (corners_world[i][2] + corners_world[next_i][2]) / 2
             )
             table['waypoints_world'].append(midpoint)
+        
+        # Calculate padded waypoints (offset outward by ROBOT_RADIUS)
+        table['waypoints_padded'] = []
+        table_center = table['center_world']
+        for waypoint in table['waypoints_world']:
+            dx = waypoint[0] - table_center[0]
+            dy = waypoint[1] - table_center[1]
+            distance = np.sqrt(dx**2 + dy**2)
+            
+            if distance > 1e-6:
+                dir_x = dx / distance
+                dir_y = dy / distance
+                
+                padded_x = waypoint[0] + dir_x * ROBOT_RADIUS
+                padded_y = waypoint[1] + dir_y * ROBOT_RADIUS
+                padded_z = waypoint[2]
+                
+                table['waypoints_padded'].append((padded_x, padded_y, padded_z))
+            else:
+                table['waypoints_padded'].append(waypoint)
+
         
         if w > h: 
             world_angle = np.pi / 2

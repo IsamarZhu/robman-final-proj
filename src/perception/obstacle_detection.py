@@ -25,7 +25,14 @@ def detect_obstacles_from_img(depth_array):
     exclusion_mask = np.ones(depth_array.shape, dtype=np.uint8) * 255
     height, width = depth_array.shape
     # Set upper right corner to 0 (exclude this region)
-    exclusion_mask[0:config.CORNER_EXCLUSION_SIZE, width-config.CORNER_EXCLUSION_SIZE:width] = 0
+
+    # Draw the exclusion box (set it to 0/black to visualize)
+    cv2.rectangle(exclusion_mask, 
+                  (width - config.CORNER_EXCLUSION_Y, 0), 
+                  (width, config.CORNER_EXCLUSION_X), 
+                  0, 
+                  -1)
+    exclusion_mask[0:config.CORNER_EXCLUSION_X, width-config.CORNER_EXCLUSION_Y:width] = 0
     
     # Apply exclusion mask
     obstacle_thresh = cv2.bitwise_and(obstacle_thresh, exclusion_mask)

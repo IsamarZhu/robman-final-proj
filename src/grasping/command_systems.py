@@ -23,6 +23,7 @@ class JointPositionCommandSource(LeafSystem):
         q_initial = np.copy(q_initial).reshape(-1)
         self._nq = q_initial.shape[0]
         self._q_des = q_initial
+        self._v_des = np.zeros(self._nq)
 
         self.DeclareVectorOutputPort(
             "iiwa_desired_state",
@@ -31,16 +32,21 @@ class JointPositionCommandSource(LeafSystem):
         )
 
     def _DoCalcOutput(self, context, output: BasicVector):
-        v_des = np.zeros(self._nq)
-        desired_state = np.concatenate([self._q_des, v_des])
+        # v_des = np.zeros(self._nq)
+        desired_state = np.concatenate([self._q_des, self._v_des])
         output.SetFromVector(desired_state)
 
-    def set_q_desired(self, q_des: np.ndarray):
+    def set_q_desired(self, q_des: np.ndarray, v_des: np.ndarray = None):
         q_des = np.copy(q_des).reshape(-1)
         assert q_des.shape[0] == self._nq
         self._q_des = q_des
 
-
+        if v_des is not None:
+            v_des = np.copy(v_des).reshape(-1)
+            assert v_des.shape[0] == self._nq
+            self._v_des = v_des
+        else:
+            self._v_des = np.zeros(self._nq)
 class WsgCommandSource(LeafSystem):
     def __init__(self, initial_width: float):
         super().__init__()

@@ -4,7 +4,8 @@ import numpy as np
 import cv2
 from pathlib import Path
 from perception.config import (
-    CORNER_EXCLUSION_SIZE,
+    CORNER_EXCLUSION_X,
+    CORNER_EXCLUSION_Y,
     CROP_X_START,
     CROP_X_END,
     CROP_Y_START,
@@ -297,11 +298,11 @@ def visualize_scene_detection(station, station_context, tables, obstacles):
     # Draw exclusion zone in gray
     height, width = depth_array_cropped.shape
     cv2.rectangle(result_img, 
-                  (width-CORNER_EXCLUSION_SIZE, 0), 
-                  (width, CORNER_EXCLUSION_SIZE), 
+                    (width - CORNER_EXCLUSION_Y, 0),
+                    (width, CORNER_EXCLUSION_X),
                   (128, 128, 128), 2)
     cv2.putText(result_img, "EXCLUDED", 
-                (width-CORNER_EXCLUSION_SIZE+5, 20), 
+                (width-CORNER_EXCLUSION_Y+5, 20), 
                 cv2.FONT_HERSHEY_SIMPLEX, 0.4, (128, 128, 128), 1)
     
     # Draw tables in green

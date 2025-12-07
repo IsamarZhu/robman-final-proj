@@ -41,7 +41,7 @@ def add_obstacles(grid, tables, obstacles=None):
                 grid.add_obstacle_rectangle(x, y, w_world, h_world, padding=ROBOT_RADIUS)
     
     # Add static obstacle (robot base)
-    grid.add_obstacle_circle(-0.35, 0.0, radius=0.3, padding=ROBOT_RADIUS)
+    # grid.add_obstacle_circle(-0.35, 0.0, radius=0.3, padding=ROBOT_RADIUS)
 
 def add_obstacle_polygon(grid: Grid, world_points: List[Tuple[float, float, float]], padding: float = 0.0):
     """

@@ -10,7 +10,7 @@ from pydrake.all import (
 from manipulation.station import LoadScenario, MakeHardwareStation
 from perception.top_level_perception import perceive_scene
 from pathing.grid import Grid
-from pathing.find_path import PathFollower, estimate_runtime
+from pathing.pathfollower import PathFollower, estimate_runtime
 from pathing.astar import AStarPlanner
 from pathing.add_obstacles import add_obstacles
 
@@ -28,6 +28,7 @@ import numpy as np
 MOVEMENT_SPEED = 0.5  # m/s
 ROTATION_SPEED = 0.02  # rad/s
 INITIAL_DELAY = 5.0  # seconds
+APPROACH_ROTATION_SPEED = 0.9  # rad/s for approach maneuvers
 
 def simulate_scenario():
     meshcat = StartMeshcat()
@@ -52,7 +53,7 @@ def simulate_scenario():
     path_follower = builder.AddSystem(
         PathFollower(start_config[:2], arm_positions, paths=[],
                      speed=MOVEMENT_SPEED, start_theta=start_config[2], goal_theta=end_config[2],
-                     rotation_speed=ROTATION_SPEED, initial_delay=INITIAL_DELAY)
+                     rotation_speed=ROTATION_SPEED, approach_rotation_speed=APPROACH_ROTATION_SPEED, initial_delay=INITIAL_DELAY)
     )
     
     builder.Connect(
@@ -76,10 +77,8 @@ def simulate_scenario():
     
     tables, obstacles = perceive_scene(station, station_context)
     table_goals = [
-        # tables[0]['waypoints_world'][2],
-        (4, 4, np.pi/2),
-        (-4, 4, np.pi/2),
-        end_config
+        end_config,
+        tables[1]['waypoints_padded'][2],
     ]
 
     # grid for A*
@@ -127,7 +126,7 @@ def simulate_scenario():
 
     # for debugging
     # visualize_grid_in_meshcat(grid, meshcat, show_grid_lines=True)
-    # visualize_robot_config(meshcat, *start_config, label="start", 
+    # visualize_robot_config(meshcat, *(np.float64(-2.6999994055566634), np.float64(4.000157194137278), 0), label="start", 
     #                       color=Rgba(0.0, 1.0, 0.0, 0.6))
     # visualize_robot_config(meshcat, *goal_config, label="goal", 
     #                       color=Rgba(1.0, 0.0, 0.0, 0.6))
