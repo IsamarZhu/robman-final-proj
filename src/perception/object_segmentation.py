@@ -103,31 +103,29 @@ def segment_objects_clustering(pc: PointCloud, eps=0.03, min_samples=50):
 
 # once we have the segmented point clouds, we want to figure out what object it is
 class ObjectDetector:
-    def __init__(self):
+    def __init__(self, scenario_number):
         """
         we preload templates for the known objects that can appear
         """
         
-        ############ scenario_one #################
-        self.mesh_templates = {
-            "mug": Path("/workspaces/robman-final-proj/assets/mug/google_16k/textured.obj"),
-            "gelatin_box": Path("/workspaces/robman-final-proj/assets/009_gelatin_box/google_16k/textured.obj"),
-            "tomato_soup": Path("/workspaces/robman-final-proj/assets/005_tomato_soup_can/google_16k/textured.obj")
-        }
+        if scenario_number == "one":
+            self.mesh_templates = {
+                "mug": Path("/workspaces/robman-final-proj/assets/mug/google_16k/textured.obj"),
+                "gelatin_box": Path("/workspaces/robman-final-proj/assets/009_gelatin_box/google_16k/textured.obj"),
+                "tomato_soup": Path("/workspaces/robman-final-proj/assets/005_tomato_soup_can/google_16k/textured.obj")
+            }
         
-        ############ scenario_two #################
-        # self.mesh_templates = {
-        #     "potted_meat": Path("/workspaces/robman-final-proj/assets/010_potted_meat_can/google_16k/textured.obj"),
-        #     "apple": Path("/workspaces/robman-final-proj/assets/apple/google_16k/textured.obj"),
-        #     "master_chef": Path("/workspaces/robman-final-proj/assets/master_chef/google_16k/textured.obj"),
-            
-        # }
-        
-        ############ scenario_three #################
-        # self.mesh_templates = {
-        #     "pudding": Path("/workspaces/robman-final-proj/assets/008_pudding_box/google_16k/textured.obj"),
-        #     "tuna": Path("/workspaces/robman-final-proj/assets/007_tuna_fish_can/google_16k/textured.obj"),
-        # }
+        elif scenario_number == "two":
+            self.mesh_templates = {
+                "potted_meat": Path("/workspaces/robman-final-proj/assets/010_potted_meat_can/google_16k/textured.obj"),
+                "apple": Path("/workspaces/robman-final-proj/assets/apple/google_16k/textured.obj"),
+                "master_chef": Path("/workspaces/robman-final-proj/assets/master_chef/google_16k/textured.obj"),   
+            }
+        elif scenario_number == "three":
+            self.mesh_templates = {
+                "pudding": Path("/workspaces/robman-final-proj/assets/008_pudding_box/google_16k/textured.obj"),
+                "tuna": Path("/workspaces/robman-final-proj/assets/007_tuna_fish_can/google_16k/textured.obj"),
+            }
         
         
         self.templates = {}

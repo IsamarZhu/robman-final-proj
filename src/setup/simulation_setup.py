@@ -12,8 +12,8 @@ from grasping.command_systems import JointPositionCommandSource, WsgCommandSourc
 
 
 class SimulationEnvironment:
-    def __init__(self, scenario_path, wsg_open=0.107):
-        self.scenario_path = Path(scenario_path)
+    def __init__(self, scenario_number, wsg_open=0.107):
+        self.scenario_path = Path(f"src/environment/scenario_{scenario_number}.yaml")
         self.wsg_open = wsg_open
         self.meshcat = None
         self.diagram = None
@@ -25,6 +25,7 @@ class SimulationEnvironment:
         self.wsg_model = None
         self.cmd_source = None
         self.wsg_cmd_source = None
+        self.scenario_number = scenario_number
 
     def build(self):
 
@@ -71,13 +72,13 @@ class SimulationEnvironment:
             station.GetInputPort("wsg_arm.force_limit"),
         )
 
-        # Add point cloud cameras
+        # add point cloud cameras
         print("Setting up cameras...")
         to_point_cloud = AddPointClouds(
             scenario=scenario,
             station=station,
             builder=builder,
-            meshcat=None,  # Don't visualize raw clouds
+            meshcat=None,
         )
 
         for name, system in to_point_cloud.items():

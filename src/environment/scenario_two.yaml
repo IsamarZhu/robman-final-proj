@@ -15,7 +15,7 @@ directives:
     file: package://manipulation/hydro/010_potted_meat_can.sdf
     default_free_body_pose:
       base_link_meat:
-        translation: [-2.7, 4.55, 0.72]
+        translation: [-4, 4.55, 0.72]
         rotation: !Rpy { deg: [90, 0, 45] } # rotate handle away from gripper
         
 - add_model:
@@ -23,7 +23,7 @@ directives:
     file: file:///workspaces/robman-final-proj/assets/apple/apple.sdf
     default_free_body_pose:
       base_link:
-        translation: [-2.55, 4.55, 0.67]
+        translation: [-3.85, 4.55, 0.67]
         rotation: !Rpy { deg: [-90, 0, 130] }
 
 - add_model:
@@ -31,11 +31,90 @@ directives:
     file: file:///workspaces/robman-final-proj/assets/master_chef/master_chef.sdf
     default_free_body_pose:
       base_link:
-        translation: [-2.45, 4.47, 0.7]
+        translation: [-3.75, 4.47, 0.7]
         rotation: !Rpy { deg: [90, 0, 190] }
 
 
 
+
+- add_model:
+    name: table0
+    file: file:///workspaces/robman-final-proj/assets/table/table.sdf
+- add_weld:
+    parent: world
+    child: table0::table_body
+    X_PC:
+        translation: [-2.5, 1.75, 0.65] # moved table closer
+        rotation: !Rpy { deg: [0, 0, 90] }
+- add_model:
+    name: chair0
+    file: file:///workspaces/robman-final-proj/assets/WoodenChair/model.sdf
+- add_weld:
+    parent: table0::table_body
+    child: chair0::body
+    X_PC:
+        translation: [-0.9, 0, -0.7]
+        rotation: !Rpy { deg: [0, 0, 0]}
+- add_model:
+    name: person0
+    file: file:///workspaces/robman-final-proj/assets/VisitorKidSit/model.sdf
+- add_weld:
+    parent: chair0::body
+    child: person0::body
+    X_PC:
+        translation: [-0.1, 0.0, 0.0]
+        rotation: !Rpy { deg: [0, 0, 90]}
+
+
+
+
+- add_model:
+    name: table1
+    file: file:///workspaces/robman-final-proj/assets/table/table.sdf
+- add_weld:
+    parent: world
+    child: table1::table_body
+    X_PC:
+        translation: [3, -0.3, 0.65]
+        rotation: !Rpy { deg: [0, 0, 270] }
+- add_model:
+    name: chair1
+    file: file:///workspaces/robman-final-proj/assets/WoodenChair/model.sdf
+- add_weld:
+    parent: table1::table_body
+    child: chair1::body
+    X_PC:
+        translation: [-0.9, 0, -0.7]
+        rotation: !Rpy { deg: [0, 0, 0]}
+- add_model:
+    name: person1
+    file: file:///workspaces/robman-final-proj/assets/VisitorKidSit/model.sdf
+- add_weld:
+    parent: chair1::body
+    child: person1::body
+    X_PC:
+        translation: [-0.1, 0.0, 0.0]
+        rotation: !Rpy { deg: [0, 0, 90]}
+
+- add_model:
+    name: table2
+    file: file:///workspaces/robman-final-proj/assets/table/table.sdf
+- add_weld:
+    parent: world
+    child: table2::table_body
+    X_PC:
+        translation: [-1, -3.0, 0.65] # moved table closer
+        rotation: !Rpy { deg: [0, 0, 0] }
+
+- add_model:
+    name: kitchen
+    file: file:////workspaces/robman-final-proj/assets/KITCHEN_SET_CLASSIC_40HwCHfeG0H/model.sdf
+- add_weld:
+    parent: world
+    child: kitchen::link_0
+    X_PC:
+        translation: [3.7, 3.7, 0] # moved table closer
+        rotation: !Rpy { deg: [0, 0, 0] }
 
 #################### KUKA IIWA AND WSG ######################
 - add_model:
@@ -49,7 +128,7 @@ directives:
         iiwa_joint_5: [-0.1]
         iiwa_joint_6: [1.7]
         iiwa_joint_7: [0]
-        iiwa_base_x: [-2.7]
+        iiwa_base_x: [-4]
         iiwa_base_y: [4]
         iiwa_base_z: [0.1]
 - add_model:

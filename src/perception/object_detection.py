@@ -10,6 +10,7 @@ from perception.object_segmentation import (
 
 
 def detect_and_locate_object(
+    scenario_number,
     diagram,
     context,
     meshcat,
@@ -29,26 +30,26 @@ def detect_and_locate_object(
     object_clouds = segment_objects_clustering(
         pc, eps=dbscan_eps, min_samples=dbscan_min_samples
     )
-    print(f"Found {len(object_clouds)} object clusters")
+    print(f"found {len(object_clouds)} object clusters")
 
     if len(object_clouds) == 0:
-        raise RuntimeError("No objects detected in scene!")
+        raise RuntimeError("no objects detected in scene!")
 
-    detector = ObjectDetector()
+    detector = ObjectDetector(scenario_number)
 
     best_match = None
     best_match_score = float("inf")
     best_match_pose = None
     best_match_cloud = None
 
-    colors = [Rgba(1, 0, 0), Rgba(0, 1, 0), Rgba(0, 0, 1), Rgba(1, 1, 0)]
+    colors = [Rgba(1, 0, 0), Rgba(0, 1, 0), Rgba(0, 0, 1)]
 
     for i, obj_cloud in enumerate(object_clouds):
         meshcat.SetObject(
             f"detection/cluster_{i}",
             obj_cloud,
             point_size=0.01,
-            rgba=colors[i % len(colors)],
+            rgba=colors[i],
         )
 
         print(f"\ncluster {i}:")

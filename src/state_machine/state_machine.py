@@ -2,6 +2,28 @@ from state_machine.states import CafeState
 from perception.object_detection import detect_and_locate_object
 from grasping.motion_primitives import pick_object
 
+# --------------------------------------------------------------------------- #
+# Configuration (maybe incorporate back later?)
+# --------------------------------------------------------------------------- #
+
+# motion parameters
+APPROACH_HEIGHT = 0.15
+LIFT_HEIGHT = 0.2
+GRASP_OFFSET = 0.00
+
+# gripper settings
+WSG_OPEN = 0.107
+WSG_CLOSED = 0.015
+
+# timing
+MOVE_TIME = 2.5
+GRASP_TIME = 2.0
+LIFT_TIME = 4.0 
+
+# segmentation parameters
+DBSCAN_EPS = 0.03
+DBSCAN_MIN_SAMPLES = 50
+
 
 class CafeStateMachine:
     def __init__(
@@ -20,7 +42,13 @@ class CafeStateMachine:
     ):
         self.env = env
         self.current_state = CafeState.PERCEPTION
-        self.object_queue = ["mug", "gelatin_box", "tomato_soup"]
+        self.scenario_number = env.scenario_number
+        if self.scenario_number == "one":
+            self.object_queue = ["mug", "gelatin_box", "tomato_soup"]
+        elif self.scenario_number == "two":
+            self.object_queue = ["potted_meat", "apple", "master_chef"]
+        elif self.scenario_number == "three":
+            self.object_queue = ["pudding", "tuna"]
         self.current_object_index = 0
 
         self.approach_height = approach_height
@@ -54,6 +82,7 @@ class CafeStateMachine:
         print(f"\n[PERCEPTION]")
 
         X_WO, self.grasp_center_xyz, self.object_top_z = detect_and_locate_object(
+            self.scenario_number,
             self.env.diagram,
             self.env.context,
             self.env.meshcat,
