@@ -57,7 +57,7 @@ class CafeStateMachine:
         self.current_state = CafeState.IDLE
         self.scenario_number = env.scenario_number
         if self.scenario_number == "one":
-            self.object_queue = ["mug", "gelatin_box", "tomato_soup"]
+            self.object_queue = ["mug", "gelatin_box", "master_chef"]
         elif self.scenario_number == "two":
             self.object_queue = ["potted_meat", "apple", "master_chef"]
         elif self.scenario_number == "three":
@@ -147,8 +147,8 @@ class CafeStateMachine:
             elif self.current_state == CafeState.PICK:
                 self.pick_state()
                 
-            elif self.current_state == CafeState.PLACE:
-                self.place_state()
+            # elif self.current_state == CafeState.PLACE:
+            #     self.place_state()
                 
             elif self.current_state == CafeState.NAVIGATE_SLIDE_RIGHT:
                 self.navigate_slide_right_state()
@@ -218,14 +218,20 @@ class CafeStateMachine:
             grasp_time=self.grasp_time,
             lift_time=self.lift_time,
         )
-
+        # self.current_state = CafeState.PICK
+        # self._transition_to_state(CafeState.NAVIGATE_ROTATE_TO_WAYPOINT)
+        self.move_state()
+        
     def move_state(self):
         print("\n[MOVE]")
         self.env.settle_scene(duration=2.0)
 
         self.current_object_index += 1
+        self.current_path_idx += 1
+
         if self.current_object_index < len(self.object_queue):
-            self.current_state = CafeState.PERCEPTION
+            self.current_waypoint_idx = 0
+            self._start_rotation_to_waypoint()
         else:
             print("\n[COMPLETE]")
 

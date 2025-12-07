@@ -167,18 +167,24 @@ directives:
     file: file:///workspaces/robman-final-proj/assets/gelatin_box.sdf
     default_free_body_pose:
       base_link_gelatin:
-        translation: [-3.9, 4.55, 0.67]
+        translation: [-3.85, 4.55, 0.67]
         rotation: !Rpy { deg: [0, 0, 130] }
 
+# - add_model:
+#     name: tomato_soup
+#     file: file:///workspaces/robman-final-proj/assets/005_tomato_soup_can/tomato_soup.sdf
+#     default_free_body_pose:
+#       base_link:
+#         translation: [-3.77, 4.48, 0.8]
+#         rotation: !Rpy { deg: [0, 0, 90] }
+
 - add_model:
-    name: tomato_soup
-    file: package://manipulation/hydro/005_tomato_soup_can.sdf
+    name: master_chef
+    file: file:///workspaces/robman-final-proj/assets/master_chef/master_chef.sdf
     default_free_body_pose:
-      base_link_soup:
-        translation: [-3.77, 4.48, 0.7]
-        rotation: !Rpy { deg: [90, 0, 190] }
-
-
+      base_link:
+        translation: [-3.75, 4.47, 0.7]
+        rotation: !Rpy { deg: [0, 0, 190] }
 
 
 
@@ -271,6 +277,19 @@ directives:
         base_frame: world
         rotation: !Rpy { deg: [180.0, 0, 90.0]}
         translation: [0, 0, 12]
+
+- add_frame:
+    name: camera3_origin
+    X_PF:
+        base_frame: tray::tray_link
+        rotation: !Rpy { deg: [-60.0, 0.0, 180.0]}
+        translation: [0, 0.27, -.1]
+- add_model:
+    name: camera3
+    file: package://manipulation/camera_box.sdf
+- add_weld:
+    parent: tray::camera3_origin
+    child: camera3::base
 - add_model:
     name: topview_camera
     file: package://manipulation/camera_box.sdf
@@ -294,6 +313,11 @@ cameras:
         depth: True
         X_PB:
             base_frame: camera2::base
+    camera3:
+        name: camera3
+        depth: True
+        X_PB:
+            base_frame: camera3::base
     topview_camera:
         name: topview_camera
         depth: True

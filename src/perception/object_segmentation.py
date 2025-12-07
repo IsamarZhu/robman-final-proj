@@ -31,7 +31,7 @@ MUG_MESH_PATH = Path("/workspaces/robman-final-proj/assets/mug/google_16k/textur
 
 MAX_ICP_ITERS = 25
 VOXEL_SIZE = 0.005
-PLATE_HEIGHT = 0.6
+PLATE_HEIGHT = 0.58
 N_SAMPLE_POINTS = 1500
             
 # downsamples the point cloud
@@ -61,10 +61,12 @@ def build_pointcloud(diagram, context) -> PointCloud:
     pc0 = diagram.GetOutputPort("camera0.point_cloud").Eval(context)
     pc1 = diagram.GetOutputPort("camera1.point_cloud").Eval(context)
     pc2 = diagram.GetOutputPort("camera2.point_cloud").Eval(context)
-    # pc3 = diagram.GetOutputPort("camera3.point_cloud").Eval(context)
+    pc3 = diagram.GetOutputPort("camera3.point_cloud").Eval(context)
 
-    # xyz = np.concatenate([pc0.xyzs(), pc1.xyzs(), pc2.xyzs(), pc3.xyzs()], axis=1,)
+
+    # OMFG THESE POINTCLOUDS, ADD THIS BACK IN IF YOU WANT 4 CAMERAS, -MAGGIE
     xyz = np.concatenate([pc0.xyzs(), pc1.xyzs(), pc2.xyzs()], axis=1,)
+    # xyz = np.concatenate([pc0.xyzs(), pc1.xyzs(), pc2.xyzs(), pc3.xyzs()], axis=1,)
     concat_pc = PointCloud(xyz.shape[1])
     concat_pc.mutable_xyzs()[:] = xyz
 
@@ -112,7 +114,7 @@ class ObjectDetector:
             self.mesh_templates = {
                 "mug": Path("/workspaces/robman-final-proj/assets/mug/google_16k/textured.obj"),
                 "gelatin_box": Path("/workspaces/robman-final-proj/assets/009_gelatin_box/google_16k/textured.obj"),
-                "tomato_soup": Path("/workspaces/robman-final-proj/assets/005_tomato_soup_can/google_16k/textured.obj")
+                "master_chef": Path("/workspaces/robman-final-proj/assets/master_chef/google_16k/textured.obj"),   
             }
         
         elif scenario_number == "two":
@@ -136,6 +138,8 @@ class ObjectDetector:
             if name == "mug":
                 mesh.apply_scale(0.8)
             elif name == "pudding":
+                mesh.apply_scale(0.75)
+            elif name == "master_chef":
                 mesh.apply_scale(0.75)
 
 

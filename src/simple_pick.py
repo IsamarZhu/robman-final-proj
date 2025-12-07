@@ -38,7 +38,9 @@ def main():
     
     # Define navigation goals (positions at table edges)
     to_visit = [
+        # tables[0]['waypoints_padded'][1],
         tables[1]['waypoints_padded'][2],
+        tables[0]['waypoints_padded'][1],
     ]
     all_paths = plan_paths(tables, obstacles, start_config, to_visit)
     state_machine = CafeStateMachine(

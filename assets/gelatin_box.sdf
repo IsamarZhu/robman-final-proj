@@ -40,13 +40,13 @@
             <size>0.08700 0.0700 0.026000</size>
           </box>
         </geometry>
-        <!-- <drake:proximity_properties>
-          <drake:mu_dynamic>0.5</drake:mu_dynamic>
-          <drake:mu_static>0.5</drake:mu_static>
+        <drake:proximity_properties>
+          <drake:mu_dynamic>0.9</drake:mu_dynamic>
+          <drake:mu_static>0.9</drake:mu_static>
           <drake:compliant_hydroelastic/>
-          <drake:hydroelastic_modulus>1e7</drake:hydroelastic_modulus>
-          <drake:hunt_crossley_dissipation>1.25</drake:hunt_crossley_dissipation>
-        </drake:proximity_properties> -->
+          <drake:hydroelastic_modulus>1e5</drake:hydroelastic_modulus>
+          <!-- <drake:hunt_crossley_dissipation>10</drake:hunt_crossley_dissipation> -->
+        </drake:proximity_properties>
       </collision>
     </link>
   </model>
