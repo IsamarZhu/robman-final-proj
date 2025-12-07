@@ -35,13 +35,20 @@ def main():
     tables, obstacles = perceive_scene(station, station_context)
     start_config = env.plant.GetPositions(env.plant_context, env.iiwa_model)
     table_centers = [table['center_world'] for table in tables]
-    
+    # print(args.scenario)
     # Define navigation goals (positions at table edges)
-    to_visit = [
-        # tables[0]['waypoints_padded'][1],
-        tables[1]['waypoints_padded'][2],
-        tables[0]['waypoints_padded'][1],
-    ]
+    if args.scenario == "one":
+        to_visit = [
+            tables[0]['waypoints_padded'][1],
+            tables[1]['waypoints_padded'][2],
+            tables[2]['waypoints_padded'][0], # not 1, 2
+        ]
+    else:
+        to_visit = [
+            tables[0]['waypoints_padded'][1],
+            tables[1]['waypoints_padded'][2],
+            tables[2]['waypoints_padded'][1],
+        ]
     all_paths = plan_paths(tables, obstacles, start_config, to_visit)
     state_machine = CafeStateMachine(
         env=env,

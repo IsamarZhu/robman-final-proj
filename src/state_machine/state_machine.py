@@ -234,6 +234,7 @@ class CafeStateMachine:
             self._start_rotation_to_waypoint()
         else:
             print("\n[COMPLETE]")
+            self._transition_to_state(CafeState.IDLE)
 
     def _transition_to_state(self, new_state: CafeState):
         """Transition to a new state."""
