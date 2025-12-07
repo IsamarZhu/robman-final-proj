@@ -461,36 +461,34 @@ class CafeStateMachine:
         self._transition_to_state(CafeState.NAVIGATE_ROTATE_TO_TABLE)
         print(f"  Approaching table at ({self.nearest_table_center[0]:.2f}, {self.nearest_table_center[1]:.2f})")
         print(f"  Target orientation: {np.degrees(self.table_facing_angle):.1f}°")
-    
+
     def navigate_rotate_to_table_state(self):
         """Rotate to face table center + 90 degrees."""
         t = self.env.simulator.get_context().get_time()
         dt_elapsed = t - self.state_start_time
         
-        # Get ACTUAL current position from plant
         plant = self.env.plant
         plant_context = self.env.plant_context
         iiwa_model = self.env.iiwa_model
         q_current = plant.GetPositions(plant_context, iiwa_model)
         actual_theta = q_current[3]
-        
-        # Calculate where we need to go
+
         delta = self.target_theta - actual_theta
         angle_diff = normalize_angle(delta)
-        rotation_needed = abs(angle_diff)
-        
-        # Calculate how long rotation should take
+
+        rotation_sign = 1
+        if angle_diff < 0:
+            rotation_needed = 2 * np.pi + angle_diff
+        else:
+            rotation_needed = angle_diff
+
         total_rotation_time = rotation_needed / self.rotation_speed
-        
-        # Check BOTH conditions: angle is close AND enough time has passed
+
         if rotation_needed < self.rotation_tolerance and dt_elapsed >= total_rotation_time:
-            # Rotation complete - stop rotating
             self._update_robot_base_orientation(self.target_theta, 0.0)
             self._start_slide_left()
             print(f"    Rotation complete: took {dt_elapsed:.2f}s")
         else:
-            # Keep rotating
-            rotation_sign = np.sign(angle_diff)
             omega = rotation_sign * self.rotation_speed
             
             lookahead_angle = omega * self.dt
@@ -792,41 +790,41 @@ class CafeStateMachine:
         print(f"  Approaching table at ({self.nearest_table_center[0]:.2f}, {self.nearest_table_center[1]:.2f})")
         print(f"  Target orientation: {np.degrees(self.table_facing_angle):.1f}°")
     
-    def navigate_rotate_to_table_state(self):
-        """Rotate to face table center + 90 degrees."""
-        t = self.env.simulator.get_context().get_time()
-        dt_elapsed = t - self.state_start_time
+    # def navigate_rotate_to_table_state(self):
+    #     """Rotate to face table center + 90 degrees."""
+    #     t = self.env.simulator.get_context().get_time()
+    #     dt_elapsed = t - self.state_start_time
         
-        # Get ACTUAL current position from plant
-        plant = self.env.plant
-        plant_context = self.env.plant_context
-        iiwa_model = self.env.iiwa_model
-        q_current = plant.GetPositions(plant_context, iiwa_model)
-        actual_theta = q_current[3]
+    #     # Get ACTUAL current position from plant
+    #     plant = self.env.plant
+    #     plant_context = self.env.plant_context
+    #     iiwa_model = self.env.iiwa_model
+    #     q_current = plant.GetPositions(plant_context, iiwa_model)
+    #     actual_theta = q_current[3]
         
-        # Calculate where we need to go
-        delta = self.target_theta - actual_theta
-        angle_diff = normalize_angle(delta)
-        rotation_needed = abs(angle_diff)
+    #     # Calculate where we need to go
+    #     delta = self.target_theta - actual_theta
+    #     angle_diff = normalize_angle(delta)
+    #     rotation_needed = abs(angle_diff)
         
-        # Calculate how long rotation should take
-        total_rotation_time = rotation_needed / self.rotation_speed
+    #     # Calculate how long rotation should take
+    #     total_rotation_time = rotation_needed / self.rotation_speed
         
-        # Check BOTH conditions: angle is close AND enough time has passed
-        if rotation_needed < self.rotation_tolerance and dt_elapsed >= total_rotation_time:
-            # Rotation complete - stop rotating
-            self._update_robot_base_orientation(self.target_theta, 0.0)
-            self._start_slide_left()
-            print(f"    Rotation complete: took {dt_elapsed:.2f}s")
-        else:
-            # Keep rotating
-            rotation_sign = np.sign(angle_diff)
-            omega = rotation_sign * self.rotation_speed
+    #     # Check BOTH conditions: angle is close AND enough time has passed
+    #     if rotation_needed < self.rotation_tolerance and dt_elapsed >= total_rotation_time:
+    #         # Rotation complete - stop rotating
+    #         self._update_robot_base_orientation(self.target_theta, 0.0)
+    #         self._start_slide_left()
+    #         print(f"    Rotation complete: took {dt_elapsed:.2f}s")
+    #     else:
+    #         # Keep rotating
+    #         rotation_sign = np.sign(angle_diff)
+    #         omega = rotation_sign * self.rotation_speed
             
-            lookahead_angle = omega * self.dt
-            desired_theta = actual_theta + lookahead_angle
+    #         lookahead_angle = omega * self.dt
+    #         desired_theta = actual_theta + lookahead_angle
             
-            self._update_robot_base_orientation(desired_theta, omega)
+    #         self._update_robot_base_orientation(desired_theta, omega)
     
     def _start_slide_left(self):
         """Start sliding left perpendicular to current orientation."""
