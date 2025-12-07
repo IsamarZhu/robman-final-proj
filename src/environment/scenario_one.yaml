@@ -168,7 +168,7 @@ directives:
     default_free_body_pose:
       base_link_gelatin:
         translation: [-3.85, 4.55, 0.67]
-        rotation: !Rpy { deg: [0, 0, 130] }
+        rotation: !Rpy { deg: [0, 0, 90] }
 
 # - add_model:
 #     name: tomato_soup

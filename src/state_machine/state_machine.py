@@ -934,14 +934,15 @@ class CafeStateMachine:
         cmd_source = self.env.cmd_source
         diagram = self.env.diagram
         context = self.env.context
-        
+
         q_current = plant.GetPositions(plant_context, iiwa_model)
         q_desired = q_current.copy()
         q_desired[3] = theta
-        
+
         v_desired = np.zeros(10)
         v_desired[3] = omega
-        
-        # NO plant.SetPositions()!  ← Remove this if it exists!
+
         cmd_source.set_q_desired(q_desired, v_desired)
         diagram.ForcedPublish(context)
+
+        self.current_theta = theta
