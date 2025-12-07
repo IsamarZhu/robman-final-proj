@@ -54,17 +54,13 @@ def pick_object(
     q_current = plant.GetPositions(plant_context, iiwa_model)
     current_base_x = q_current[0]
     current_base_y = q_current[1]
+    current_theta = q_current[3]
 
-    # offsets relative to current base position
-    place_offset_x = -0.40
-    place_offset_y = 0.3
+    offset_distance = 0.5
+    place_direction = current_theta + np.pi/2
 
-    # ignore for now; maybe reconciliation
-    # place_offset_x = 0.3  # Offset in x from current base position
-    # place_offset_y = 0.4   # Offset in y from current base position
-
-    place_x = current_base_x + place_offset_x
-    place_y = current_base_y + place_offset_y
+    place_x = current_base_x + offset_distance * np.cos(place_direction)
+    place_y = current_base_y + offset_distance * np.sin(place_direction)
     place_z = p_lift_higher[2]
     p_place_target = np.array([place_x, place_y, place_z])
 
