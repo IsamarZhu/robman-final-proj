@@ -146,7 +146,7 @@ def visualize_robot_config(meshcat, x, y, theta, label="robot", color=None):
     
     # Robot footprint visualization (circular)
     from pydrake.geometry import Cylinder
-    robot_radius = 0.35
+    robot_radius = 0.37
     robot_height = 0.4
     
     # Draw robot body

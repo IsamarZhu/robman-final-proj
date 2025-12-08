@@ -4,7 +4,8 @@ from pathing.grid import Grid
 
 TABLE_LENGTH = 0.9
 TABLE_WIDTH = 1.3125
-ROBOT_RADIUS = 0.35
+# Increase padding so robot stops further from table edges for better camera visibility
+ROBOT_RADIUS = 0.37
 
 def add_obstacles(grid, tables, obstacles=None):
     """
