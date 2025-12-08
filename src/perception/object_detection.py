@@ -49,13 +49,13 @@ def detect_and_locate_object(
     colors = [Rgba(1, 0, 0), Rgba(0, 1, 0), Rgba(0, 0, 1)]
 
     for i, obj_cloud in enumerate(object_clouds):
-        # meshcat.SetObject(
-        #     f"detection/cluster_{i}",
-        #     obj_cloud,
-        #     point_size=0.01,
-        #     # rgba=colors[i],
-        #     rgba=colors[i % len(colors)],  # Wrap around if more than 6 clusters
-        # )
+        meshcat.SetObject(
+            f"detection/cluster_{i}",
+            obj_cloud,
+            point_size=0.01,
+            # rgba=colors[i],
+            rgba=colors[i % len(colors)],  # Wrap around if more than 6 clusters
+        )
 
         print(f"\ncluster {i}:")
         name, pose, score = detector.match_object(obj_cloud)

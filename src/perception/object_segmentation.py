@@ -68,12 +68,12 @@ def build_pointcloud(diagram, context) -> PointCloud:
     print(f"[detect] Memory after build_pointcloud 2: {process.memory_info().rss / 1024 / 1024:.1f} MB")
     pc2 = diagram.GetOutputPort("camera2.point_cloud").Eval(context)
     print(f"[detect] Memory after build_pointcloud 3: {process.memory_info().rss / 1024 / 1024:.1f} MB")
-    # pc3 = diagram.GetOutputPort("camera3.point_cloud").Eval(context)
+    pc3 = diagram.GetOutputPort("camera3.point_cloud").Eval(context)
 
 
     # OMFG THESE POINTCLOUDS, ADD THIS BACK IN IF YOU WANT 4 CAMERAS, -MAGGIE
-    xyz = np.concatenate([pc0.xyzs(), pc1.xyzs(), pc2.xyzs()], axis=1,)
-    # xyz = np.concatenate([pc0.xyzs(), pc1.xyzs(), pc2.xyzs(), pc3.xyzs()], axis=1,)
+    # xyz = np.concatenate([pc0.xyzs(), pc1.xyzs(), pc2.xyzs()], axis=1,)
+    xyz = np.concatenate([pc0.xyzs(), pc1.xyzs(), pc2.xyzs(), pc3.xyzs()], axis=1,)
     concat_pc = PointCloud(xyz.shape[1])
     concat_pc.mutable_xyzs()[:] = xyz
 

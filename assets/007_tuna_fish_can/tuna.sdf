@@ -7,9 +7,9 @@
       <inertial>
         <mass>0.1</mass>
         <inertia>
-          <ixx>1e-2</ixx>
-          <iyy>1e-2</iyy>
-          <izz>1e-2</izz>
+          <ixx>1e-4</ixx>
+          <iyy>1e-4</iyy>
+          <izz>1e-4</izz>
         </inertia>
       </inertial>
 

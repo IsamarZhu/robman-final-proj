@@ -30,7 +30,7 @@ directives:
     file: file:///workspaces/robman-final-proj/assets/master_chef/master_chef.sdf
     default_free_body_pose:
       base_link:
-        translation: [-3.8, 4.55, 0.67]
+        translation: [-3.8, 4.49, 0.67]
         # rotation: !Rpy { deg: [0, 0, 190] }
         rotation: !Rpy { deg: [-90, 0, 190] }
 
@@ -39,11 +39,65 @@ directives:
     file: file:///workspaces/robman-final-proj/assets/007_tuna_fish_can/tuna.sdf
     default_free_body_pose:
       base_link:
-        translation: [-3.9, 4.47, 0.7]
+        translation: [-3.89, 4.44, 0.7]
         rotation: !Rpy { deg: [0, 0, 0] }
 
 
+- add_model:
+    name: plant1
+    file: file:///workspaces/robman-final-proj/assets/low_poly_tree/treelarge.sdf
+- add_weld:
+    parent: world
+    child: plant1::body
+    X_PC:
+        translation: [0, 0, 0.0]
+        rotation: !Rpy { deg: [90, 0, 40]}
+- add_model:
+    name: plant2
+    file: file:///workspaces/robman-final-proj/assets/low_poly_tree/treelarge.sdf
+- add_weld:
+    parent: world
+    child: plant2::body
+    X_PC:
+        translation: [-3, -4, 0.0]
+        rotation: !Rpy { deg: [90, 0, -80]}
+- add_model:
+    name: plant3
+    file: file:///workspaces/robman-final-proj/assets/low_poly_tree/treelarge.sdf
+- add_weld:
+    parent: world
+    child: plant3::body
+    X_PC:
+        translation: [4, -4, 0.0]
+        rotation: !Rpy { deg: [90, 0, -120]}
 
+- add_model:
+    name: bush1
+    file: file:///workspaces/robman-final-proj/assets/bush/bush.sdf
+- add_weld:
+    parent: world
+    child: bush1::body
+    X_PC:
+        translation: [1, 1.5, -0.3]
+        rotation: !Rpy { deg: [90, 0, 30]}
+- add_model:
+    name: bush2
+    file: file:///workspaces/robman-final-proj/assets/bush/bush.sdf
+- add_weld:
+    parent: world
+    child: bush2::body
+    X_PC:
+        translation: [-2, 2.9, -0.3]
+        rotation: !Rpy { deg: [90, 0, 70]}
+- add_model:
+    name: bush3
+    file: file:///workspaces/robman-final-proj/assets/bush/bush.sdf
+- add_weld:
+    parent: world
+    child: bush3::body
+    X_PC:
+        translation: [2, -3.2, -0.3]
+        rotation: !Rpy { deg: [90, 0, 70]}
 
 - add_model:
     name: table0
@@ -84,7 +138,7 @@ directives:
     child: table1::table_body
     X_PC:
         translation: [3, -0.3, 0.65]
-        rotation: !Rpy { deg: [0, 0, 270] }
+        rotation: !Rpy { deg: [0, 0, 90] }
 - add_model:
     name: chair1
     file: file:///workspaces/robman-final-proj/assets/WoodenChair/model.sdf

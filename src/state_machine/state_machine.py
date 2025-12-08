@@ -177,7 +177,7 @@ class CafeStateMachine:
         process = psutil.Process(os.getpid())
         print(f"Memory before settle: {process.memory_info().rss / 1024 / 1024:.1f} MB")
 
-        self.env.meshcat.StopRecording()
+        # self.env.meshcat.StopRecording()
         self.env.settle_scene(duration=2.0)
 
         self.env.meshcat.Delete("detection")
@@ -188,7 +188,7 @@ class CafeStateMachine:
 
         print(f"Memory after cleanup: {process.memory_info().rss / 1024 / 1024:.1f} MB")
 
-        self.env.meshcat.StartRecording(frames_per_second=5)
+        # self.env.meshcat.StartRecording(frames_per_second=10)
 
         target_object = self.object_queue[self.current_object_index]
         print(f"\n[PERCEPTION]")

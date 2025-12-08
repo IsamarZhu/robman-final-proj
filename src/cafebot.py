@@ -50,7 +50,7 @@ def main():
         to_visit = [
             tables[2]['waypoints_padded'][2], #1 works, not 2, 0
             tables[1]['waypoints_padded'][2], #2 is vert clos
-            tables[0]['waypoints_padded'][3],
+            tables[0]['waypoints_padded'][1],
         ]
     all_paths = plan_paths(tables, obstacles, start_config, to_visit, env.meshcat)
     state_machine = CafeStateMachine(
