@@ -77,6 +77,7 @@ class CafeStateMachine:
 
         self.grasp_center_xyz = None
         self.object_top_z = None
+        self.object_cloud = None
         self.baseline_force = 0.0
 
         self.q_approach = None
@@ -167,13 +168,14 @@ class CafeStateMachine:
         self.table_centers = table_centers
 
     def perception_state(self):
-        if self.current_object_index > 0:
-            self.env.settle_scene(duration=2.0)
+        # ensure the scene is settled before capturing the pointcloud so
+        # the gripper/tray have time to stop any residual motion
+        self.env.settle_scene(duration=2.0)
 
         target_object = self.object_queue[self.current_object_index]
         print(f"\n[PERCEPTION]")
 
-        X_WO, self.grasp_center_xyz, self.object_top_z = detect_and_locate_object(
+        detection_result = detect_and_locate_object(
             self.scenario_number,
             self.env.diagram,
             self.env.context,
@@ -183,6 +185,8 @@ class CafeStateMachine:
             dbscan_min_samples=self.dbscan_min_samples,
             grasp_offset=self.grasp_offset,
         )
+        
+        X_WO, self.grasp_center_xyz, self.object_top_z, self.object_cloud = detection_result
 
         self.current_state = CafeState.PICK
 
@@ -208,9 +212,8 @@ class CafeStateMachine:
             move_time=self.move_time,
             grasp_time=self.grasp_time,
             lift_time=self.lift_time,
+            object_cloud=self.object_cloud,
         )
-        # self.current_state = CafeState.PICK
-        # self._transition_to_state(CafeState.NAVIGATE_ROTATE_TO_WAYPOINT)
         self.move_state()
         
     def move_state(self):

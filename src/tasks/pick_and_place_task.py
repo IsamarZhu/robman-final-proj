@@ -1,5 +1,7 @@
+import numpy as np
 from perception.object_detection import detect_and_locate_object
 from grasping.motion_primitives import pick_object
+from grasping.antipodal_grasping import get_best_antipodal_grasp
 
 
 class PickAndPlaceTask:
@@ -18,6 +20,8 @@ class PickAndPlaceTask:
         lift_time=4.0,
         dbscan_eps=0.03,
         dbscan_min_samples=50,
+        use_antipodal_grasping=True,
+        num_grasp_samples=500,
     ):
         self.env = env
         self.approach_height = approach_height
@@ -30,15 +34,18 @@ class PickAndPlaceTask:
         self.lift_time = lift_time
         self.dbscan_eps = dbscan_eps
         self.dbscan_min_samples = dbscan_min_samples
+        self.use_antipodal_grasping = use_antipodal_grasping
+        self.num_grasp_samples = num_grasp_samples
 
     def execute(self, target_object):
         """
-        execute complete pick-and-place for a target object
+        execute complete pick-and-place for a target object using antipodal grasping
         """
         print(f"PICKING OBJECT: {target_object.upper()}")
 
         # detection of object
-        X_WO, grasp_center_xyz, object_top_z = detect_and_locate_object(
+        detection_result = detect_and_locate_object(
+            self.env.scenario_number,
             self.env.diagram,
             self.env.context,
             self.env.meshcat,
@@ -47,6 +54,23 @@ class PickAndPlaceTask:
             dbscan_min_samples=self.dbscan_min_samples,
             grasp_offset=self.grasp_offset,
         )
+        
+        X_WO, grasp_center_xyz, object_top_z, object_cloud = detection_result
+
+        # use antipodal grasping to find best grasp pose
+        X_WG_grasp = None
+        if self.use_antipodal_grasping:
+            print("\nFinding antipodal grasp...")
+            X_WG_grasp = get_best_antipodal_grasp(
+                object_cloud,
+                rng=np.random.default_rng(),
+                num_samples=self.num_grasp_samples,
+            )
+            
+            if X_WG_grasp is not None:
+                print(f"  Found valid antipodal grasp!")
+            else:
+                print("  No valid antipodal grasp found, using default downward grasp")
 
         # executing the pick and place
         pick_object(
@@ -68,4 +92,5 @@ class PickAndPlaceTask:
             move_time=self.move_time,
             grasp_time=self.grasp_time,
             lift_time=self.lift_time,
+            X_WG_grasp=X_WG_grasp,
         )

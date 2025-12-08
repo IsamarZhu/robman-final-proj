@@ -22,7 +22,7 @@ def detect_and_locate_object(
     """
     detect objects in scene and locate the target object using segmentation + ICP
     and returns the transformation of the object in the world frame along with
-    the computed grasp position
+    the computed grasp position and segmented point cloud (with normals for antipodal grasping)
     """
 
     pc = build_pointcloud(diagram, context)
@@ -50,6 +50,7 @@ def detect_and_locate_object(
             obj_cloud,
             point_size=0.01,
             rgba=colors[i],
+            # rgba=colors[i % len(colors)],  # Wrap around if more than 6 clusters
         )
 
         print(f"\ncluster {i}:")
@@ -71,10 +72,15 @@ def detect_and_locate_object(
 
     obj_xyz = best_match_cloud.xyzs()
     object_top_z = float(np.max(obj_xyz[2, :]))
+    object_bottom_z = float(np.min(obj_xyz[2, :]))
 
     center_x = float(np.mean(obj_xyz[0, :]))
     center_y = float(np.mean(obj_xyz[1, :]))
     grasp_center_xyz = np.array([center_x, center_y, object_top_z + grasp_offset])
+
+    # debug logging
+    print(f"  Object position: x={center_x:.3f}, y={center_y:.3f}, z_range=[{object_bottom_z:.3f}, {object_top_z:.3f}]")
+    print(f"  Grasp center: {grasp_center_xyz}")
 
     meshcat.SetObject(
         "grasp/target",
@@ -86,4 +92,7 @@ def detect_and_locate_object(
         RigidTransform(grasp_center_xyz),
     )
 
-    return X_WO, grasp_center_xyz, object_top_z
+    # Estimate normals for antipodal grasping
+    best_match_cloud.EstimateNormals(radius=0.02, num_closest=30)
+
+    return X_WO, grasp_center_xyz, object_top_z, best_match_cloud

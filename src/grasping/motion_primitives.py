@@ -29,6 +29,7 @@ def pick_object(
     move_time=2.5,
     grasp_time=2.0,
     lift_time=4.0,
+    object_cloud=None,
 ):
     """
     execute simple 4-step pick sequence:
@@ -36,26 +37,67 @@ def pick_object(
     2. descend to grasp
     3. close gripper
     4. lift up
+    
+    if object_cloud is provided, computes antipodal grasp pose
+    Otherwise uses default downward grasp
     """
     context = simulator.get_mutable_context()
 
-    # gripper orientation: pointing down
     R_WG_down = RotationMatrix.MakeXRotation(-np.pi / 2.0)
 
-    # key positions
-    x, y, z_grasp = grasp_center_xyz
-    z_grasp += 0.05  # small offset to account for gripper finger length
-
-    p_approach = np.array([x, y, z_grasp + approach_height])
-    p_grasp = np.array([x, y, z_grasp])
-    p_lift = np.array([x, y, z_grasp + lift_height])
-    p_lift_higher = np.array([x, y, z_grasp + lift_height + 0.1])  # 10cm higher
+    # compute antipodal grasp if cloud provided
+    X_WG_grasp = None
+    if object_cloud is not None:
+        from grasping.antipodal_grasping import get_best_antipodal_grasp
+        print("Finding antipodal grasp...")
+        X_WG_grasp = get_best_antipodal_grasp(
+            object_cloud,
+            rng=np.random.default_rng(),
+            num_samples=500,
+        )
+        if X_WG_grasp is not None:
+            print("Found antipodal grasp, executing with antipodal approach")
+        else:
+            print("No valid antipodal grasp found, falling back to downward grasp")
+    
+    # use antipodal grasp if found
+    if X_WG_grasp is not None:
+        print("Executing with antipodal grasp")
+        R_WG = X_WG_grasp.rotation()
+        p_grasp = X_WG_grasp.translation()
+        
+        # debug: visualize the grasp pose
+        print(f"    Grasp position: {p_grasp}")
+        print(f"    Grasp x-axis (into object): {R_WG.multiply(np.array([1, 0, 0]))}")
+        
+        # visualize grasp frame
+        # meshcat.SetObject("grasp/antipodal_frame", Box(0.03, 0.03, 0.03), Rgba(0, 1, 1, 0.8))
+        # meshcat.SetTransform("grasp/antipodal_frame", X_WG_grasp)
+        
+        # Approach: back up along gripper x-axis (normal direction)
+        p_approach = p_grasp - approach_height * R_WG.multiply(np.array([1, 0, 0]))
+        
+        # Lift: back up along gripper x-axis
+        p_lift = p_grasp - lift_height * R_WG.multiply(np.array([1, 0, 0]))
+        p_lift_higher = p_grasp - (lift_height + 0.1) * R_WG.multiply(np.array([1, 0, 0]))
+    else:
+        # default when no antipodal grasp found downward grasp
+        R_WG = R_WG_down
+        
+        x, y, z_grasp = grasp_center_xyz
+        z_grasp += 0.05  # small offset to account for gripper finger length
+        
+        p_approach = np.array([x, y, z_grasp + approach_height])
+        p_grasp = np.array([x, y, z_grasp])
+        p_lift = np.array([x, y, z_grasp + lift_height])
+        p_lift_higher = np.array([x, y, z_grasp + lift_height + 0.1])  # 10cm higher
 
     q_current = plant.GetPositions(plant_context, iiwa_model)
     current_base_x = q_current[0]
     current_base_y = q_current[1]
     current_theta = q_current[3]
 
+    # place  at table edge offset from current base
     offset_distance = 0.5
     place_direction = current_theta + np.pi/2
 
@@ -82,16 +124,35 @@ def pick_object(
     base_positions_lock = get_locked_joint_positions(plant, plant_context, iiwa_model)
     q_start = plant.GetPositions(plant_context, iiwa_model)
 
+    # For antipodal grasps, use more relaxed constraints (no strict orientation)
+    # For downward grasps, also relax for better reachability but keep stricter 
+    if X_WG_grasp is not None:
+        # for antipodal only enforce grasp orientation tightly, relax everything else
+        approach_theta = 1.5  # very relaxed for approach
+        grasp_theta = 0.5     # moderate for actual grasp
+        lift_theta = 1.5      # very relaxed for lift/place
+        approach_pos_tol = 0.01  # tighter position tolerance for centering
+        grasp_pos_tol = 0.008     # very tight for actual grasp
+        lift_pos_tol = 0.03      # moderate for lift/place
+    else:
+        # Downward: relaxed constraints for better reachability
+        approach_theta = 0.5
+        grasp_theta = 0.5
+        lift_theta = 1.5
+        approach_pos_tol = 0.02
+        grasp_pos_tol = 0.01
+        lift_pos_tol = 0.03
+
     q_approach = solve_ik(
         plant,
         plant_context,
         iiwa_model,
         wsg_model,
         p_approach,
-        R_WG_down,
-        position_tolerance=0.02,
+        R_WG, # use same orientation as grasp
+        position_tolerance=approach_pos_tol,
         lock_base=True,
-        theta_bound=0.3,
+        theta_bound=approach_theta,
         base_positions_to_lock=base_positions_lock,
     )
 
@@ -101,10 +162,10 @@ def pick_object(
         iiwa_model,
         wsg_model,
         p_grasp,
-        R_WG_down,
-        position_tolerance=0.02,
+        R_WG,
+        position_tolerance=grasp_pos_tol,  # Very tight for actual grasp
         lock_base=True,
-        theta_bound=0.3,
+        theta_bound=grasp_theta,
         base_positions_to_lock=base_positions_lock,
     )
 
@@ -114,10 +175,10 @@ def pick_object(
         iiwa_model,
         wsg_model,
         p_lift,
-        R_WG_down,
-        position_tolerance=0.08,
+        R_WG,
+        position_tolerance=lift_pos_tol,
         lock_base=True,
-        theta_bound=0.8,
+        theta_bound=lift_theta,
         base_positions_to_lock=base_positions_lock,
     )
 
@@ -127,12 +188,17 @@ def pick_object(
         iiwa_model,
         wsg_model,
         p_lift_higher,
-        R_WG_down,
-        position_tolerance=0.08,
+        R_WG,
+        position_tolerance=lift_pos_tol,
         lock_base=True,
-        theta_bound=0.8,
+        theta_bound=lift_theta,
         base_positions_to_lock=base_positions_lock,
     )
+
+    # for placing, always use downward orientation and moderate tolerances
+    # relax more since gripper might be in awkward orientation after antipodal grasp to prevent ik failure
+    place_pos_tol = 0.05
+    place_theta = 1.2
 
     q_place = solve_ik(
         plant,
@@ -141,9 +207,9 @@ def pick_object(
         wsg_model,
         p_place_target,
         R_WG_down,
-        position_tolerance=0.08,
+        position_tolerance=place_pos_tol,
         lock_base=True,
-        theta_bound=0.8,
+        theta_bound=place_theta,
         base_positions_to_lock=base_positions_lock,
     )
 
@@ -155,9 +221,9 @@ def pick_object(
         wsg_model,
         p_descent_target,
         R_WG_down,
-        position_tolerance=0.08,
+        position_tolerance=place_pos_tol,
         lock_base=True,
-        theta_bound=0.8,
+        theta_bound=place_theta,
         base_positions_to_lock=base_positions_lock,
     )
 

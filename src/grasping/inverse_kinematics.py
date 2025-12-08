@@ -13,9 +13,9 @@ def solve_ik(
     wsg_model,
     p_W_target,
     R_WG_desired=None,
-    position_tolerance=0.01,
+    position_tolerance=0.05,
     lock_base=False,
-    theta_bound=0.2,
+    theta_bound=0.7,
     base_positions_to_lock=None,
 ):
     """
@@ -55,9 +55,8 @@ def solve_ik(
                 continue
 
     # position constraint (small box around target)
-    tol = position_tolerance
-    lower = p_W_target - tol
-    upper = p_W_target + tol
+    lower = p_W_target - position_tolerance
+    upper = p_W_target + position_tolerance
 
     ik.AddPositionConstraint(
         ee_frame,
