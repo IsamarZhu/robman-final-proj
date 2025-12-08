@@ -15,6 +15,7 @@ def detect_obstacles_from_img(depth_array):
 
     depth_min = np.min(depth_array_vis)
     depth_max = np.max(depth_array_vis)
+    print(f"DEPTH MAX: {depth_max}")
     if depth_max > depth_min:
         depth_normalized = 255 - ((depth_array_vis - depth_min) / (depth_max - depth_min) * 255)
     else:

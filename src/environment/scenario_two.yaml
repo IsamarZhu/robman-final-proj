@@ -18,13 +18,21 @@ directives:
         translation: [-4, 4.55, 0.72]
         rotation: !Rpy { deg: [0, 0, 45] } # rotate handle away from gripper
         
+# - add_model:
+#     name: apple
+#     file: file:///workspaces/robman-final-proj/assets/apple/apple.sdf
+#     default_free_body_pose:
+#       base_link:
+#         translation: [-3.8, 4.55, 0.67]
+#         rotation: !Rpy { deg: [-90, 0, 130] }
 - add_model:
-    name: apple
-    file: file:///workspaces/robman-final-proj/assets/apple/apple.sdf
+    name: master_chef
+    file: file:///workspaces/robman-final-proj/assets/master_chef/master_chef.sdf
     default_free_body_pose:
       base_link:
         translation: [-3.8, 4.55, 0.67]
-        rotation: !Rpy { deg: [-90, 0, 130] }
+        # rotation: !Rpy { deg: [0, 0, 190] }
+        rotation: !Rpy { deg: [-90, 0, 190] }
 
 - add_model:
     name: tuna
@@ -103,7 +111,7 @@ directives:
     parent: world
     child: table2::table_body
     X_PC:
-        translation: [-1, -3.0, 0.65] # moved table closer
+        translation: [-0.5, -2.8, 0.65] # moved table closer
         rotation: !Rpy { deg: [0, 0, 0] }
 
 - add_model:
@@ -195,6 +203,19 @@ directives:
         base_frame: world
         rotation: !Rpy { deg: [180.0, 0, 90.0]}
         translation: [0, 0, 12]
+- add_frame:
+    name: camera3_origin
+    X_PF:
+        base_frame: tray::tray_link
+        rotation: !Rpy { deg: [-30.0, 0.0, 310.0]}
+        translation: [-0.23, -0.15, -.12]
+- add_model:
+    name: camera3
+    file: package://manipulation/camera_box.sdf
+- add_weld:
+    parent: tray::camera3_origin
+    child: camera3::base
+
 - add_model:
     name: topview_camera
     file: package://manipulation/camera_box.sdf
@@ -218,6 +239,11 @@ cameras:
         depth: True
         X_PB:
             base_frame: camera2::base
+    camera3:
+        name: camera3
+        depth: True
+        X_PB:
+            base_frame: camera3::base
     topview_camera:
         name: topview_camera
         depth: True

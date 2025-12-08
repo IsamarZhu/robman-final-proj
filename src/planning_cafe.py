@@ -134,7 +134,7 @@ def simulate_scenario():
     #               label="raw_path", show_orientations=False)
     # visualize_path(meshcat, smoothed_path, color=Rgba(0.0, 0.0, 1.0, 0.9), 
     #               label="smoothed_path", show_orientations=True)
-    visualize_scene_detection(station, station_context, tables, obstacles)
+    # visualize_scene_detection(station, station_context, tables, obstacles)
     
     diagram.ForcedPublish(context)
     simulator.AdvanceTo(total_sim_time)

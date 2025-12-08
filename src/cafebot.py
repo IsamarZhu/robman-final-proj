@@ -25,16 +25,17 @@ def main():
 
     # for debugging
     env.meshcat.SetCameraPose(
-        np.array([1, 8, 2]).reshape(3, 1),      # Camera position
-        np.array([0, 0, 0.5]).reshape(3, 1)      # Look at slightly above ground
+        np.array([1, 8, 2]).reshape(3, 1),
+        np.array([0, 0, 0.5]).reshape(3, 1)
     )
 
-    env.meshcat.StartRecording(frames_per_second = 15) # lowered fps because of memroy issue
+
+    env.meshcat.StartRecording(frames_per_second = 10) # lowered fps because of memroy issue
     station = env.station
     station_context = station.GetMyContextFromRoot(env.context)
     
     tables, obstacles = perceive_scene(station, station_context)
-    visualize_scene_detection(station, station_context, tables, obstacles)
+    # visualize_scene_detection(station, station_context, tables, obstacles)
     start_config = env.plant.GetPositions(env.plant_context, env.iiwa_model)
     table_centers = [table['center_world'] for table in tables]
     # print(args.scenario)
@@ -48,8 +49,8 @@ def main():
     elif args.scenario == "two":
         to_visit = [
             tables[2]['waypoints_padded'][2], #1 works, not 2, 0
-            # tables[1]['waypoints_padded'][2],
-            # tables[2]['waypoints_padded'][1],
+            tables[1]['waypoints_padded'][2], #2 is vert clos
+            tables[0]['waypoints_padded'][3],
         ]
     all_paths = plan_paths(tables, obstacles, start_config, to_visit, env.meshcat)
     state_machine = CafeStateMachine(

@@ -1,6 +1,7 @@
 
 from pathlib import Path
 import numpy as np
+from py import process
 import trimesh
 
 from pydrake.all import (
@@ -58,21 +59,64 @@ def remove_below_z(pc: PointCloud, z_thresh: float) -> PointCloud:
 
 # builds a pointcloud
 def build_pointcloud(diagram, context) -> PointCloud:
+    import psutil
+    import os
+    process = psutil.Process(os.getpid())
     pc0 = diagram.GetOutputPort("camera0.point_cloud").Eval(context)
+    print(f"[detect] Memory after build_pointcloud 1: {process.memory_info().rss / 1024 / 1024:.1f} MB")
     pc1 = diagram.GetOutputPort("camera1.point_cloud").Eval(context)
+    print(f"[detect] Memory after build_pointcloud 2: {process.memory_info().rss / 1024 / 1024:.1f} MB")
     pc2 = diagram.GetOutputPort("camera2.point_cloud").Eval(context)
-    pc3 = diagram.GetOutputPort("camera3.point_cloud").Eval(context)
+    print(f"[detect] Memory after build_pointcloud 3: {process.memory_info().rss / 1024 / 1024:.1f} MB")
+    # pc3 = diagram.GetOutputPort("camera3.point_cloud").Eval(context)
 
 
     # OMFG THESE POINTCLOUDS, ADD THIS BACK IN IF YOU WANT 4 CAMERAS, -MAGGIE
-    # xyz = np.concatenate([pc0.xyzs(), pc1.xyzs(), pc2.xyzs()], axis=1,)
-    xyz = np.concatenate([pc0.xyzs(), pc1.xyzs(), pc2.xyzs(), pc3.xyzs()], axis=1,)
+    xyz = np.concatenate([pc0.xyzs(), pc1.xyzs(), pc2.xyzs()], axis=1,)
+    # xyz = np.concatenate([pc0.xyzs(), pc1.xyzs(), pc2.xyzs(), pc3.xyzs()], axis=1,)
     concat_pc = PointCloud(xyz.shape[1])
     concat_pc.mutable_xyzs()[:] = xyz
 
     down_pc = downsample(concat_pc, VOXEL_SIZE)
     obj_pc = remove_below_z(down_pc, PLATE_HEIGHT)
     return obj_pc
+
+# def build_pointcloud(diagram, context) -> PointCloud:
+#     import psutil, os, gc
+#     import numpy as np
+#     process = psutil.Process(os.getpid())
+
+#     pcs = []
+#     for i in [0, 1, 2]:
+#         pc = diagram.GetOutputPort(f"camera{i}.point_cloud").Eval(context)
+#         pcs.append(pc)
+#         print(
+#             f"[detect] After cam{i}: "
+#             f"{process.memory_info().rss / 1024 / 1024:.1f} MB"
+#         )
+#     counts = [pc.xyzs().shape[1] for pc in pcs]
+#     total_pts = sum(counts)
+#     xyz = np.empty((3, total_pts), dtype=np.float32)
+#     idx = 0
+#     for pc, n in zip(pcs, counts):
+#         xyz[:, idx:idx+n] = pc.xyzs()
+#         idx += n
+#     del pcs
+#     gc.collect()
+
+#     concat_pc = PointCloud(total_pts)
+#     concat_pc.mutable_xyzs()[:] = xyz
+
+#     del xyz
+#     gc.collect()
+
+#     down_pc = downsample(concat_pc, VOXEL_SIZE)
+#     obj_pc  = remove_below_z(down_pc, PLATE_HEIGHT)
+
+#     del concat_pc, down_pc
+#     gc.collect()
+
+#     return obj_pc
 
 # segment point cloud into individual objects using DBSCAN clustering
 def segment_objects_clustering(pc: PointCloud, eps=0.03, min_samples=50):
@@ -119,8 +163,9 @@ class ObjectDetector:
         elif scenario_number == "two":
             self.mesh_templates = {
                 "potted_meat": Path("/workspaces/robman-final-proj/assets/010_potted_meat_can/google_16k/textured.obj"),
-                "apple": Path("/workspaces/robman-final-proj/assets/apple/google_16k/textured.obj"),
                 "master_chef": Path("/workspaces/robman-final-proj/assets/master_chef/google_16k/textured.obj"),   
+                "tuna": Path("/workspaces/robman-final-proj/assets/007_tuna_fish_can/google_16k/textured.obj"),
+                # "apple": Path("/workspaces/robman-final-proj/assets/apple/google_16k/textured.obj"),
             }
         elif scenario_number == "three":
             self.mesh_templates = {
@@ -139,7 +184,7 @@ class ObjectDetector:
             elif name == "pudding":
                 mesh.apply_scale(0.75)
             elif name == "master_chef":
-                mesh.apply_scale(0.6)
+                mesh.apply_scale(0.5)
 
 
             cloud_points, _ = trimesh.sample.sample_surface(mesh, 1000)

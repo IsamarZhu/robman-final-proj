@@ -1,4 +1,5 @@
 import numpy as np
+import gc
 from typing import List, Tuple
 from pydrake.all import RigidTransform, RotationMatrix, PiecewisePolynomial
 
@@ -59,7 +60,7 @@ class CafeStateMachine:
         if self.scenario_number == "one":
             self.object_queue = ["mug", "gelatin_box", "apple"]
         elif self.scenario_number == "two":
-            self.object_queue = ["potted_meat", "apple", "tuna"]
+            self.object_queue = ["potted_meat", "master_chef", "tuna"]
         elif self.scenario_number == "three":
             self.object_queue = ["pudding", "tuna"]
         self.current_object_index = 0
@@ -171,12 +172,27 @@ class CafeStateMachine:
         self.table_centers = table_centers
 
     def perception_state(self):
-        # ensure the scene is settled before capturing the pointcloud so
-        # the gripper/tray have time to stop any residual motion
+        import psutil
+        import os
+        process = psutil.Process(os.getpid())
+        print(f"Memory before settle: {process.memory_info().rss / 1024 / 1024:.1f} MB")
+
+        self.env.meshcat.StopRecording()
         self.env.settle_scene(duration=2.0)
+
+        self.env.meshcat.Delete("detection")
+        self.env.meshcat.Delete("grasp")
+        self.env.meshcat.Delete("grid")
+        self.env.meshcat.Delete("traj")
+        gc.collect()
+
+        print(f"Memory after cleanup: {process.memory_info().rss / 1024 / 1024:.1f} MB")
+
+        self.env.meshcat.StartRecording(frames_per_second=5)
 
         target_object = self.object_queue[self.current_object_index]
         print(f"\n[PERCEPTION]")
+        print(f"Memory before detection: {process.memory_info().rss / 1024 / 1024:.1f} MB")
 
         detection_result = detect_and_locate_object(
             self.scenario_number,
@@ -217,6 +233,8 @@ class CafeStateMachine:
             lift_time=self.lift_time,
             object_cloud=self.object_cloud,
         )
+        self.env.meshcat.Delete("detection")
+        self.env.meshcat.Delete("grasp")
         self.move_state()
         
     def move_state(self):
@@ -231,6 +249,8 @@ class CafeStateMachine:
 
         self.current_object_index += 1
         self.current_path_idx += 1
+
+        gc.collect()
 
         if self.current_object_index < len(self.object_queue):
             self.current_waypoint_idx = 0
@@ -398,6 +418,10 @@ class CafeStateMachine:
             rotation_needed = 2 * np.pi + angle_diff
         else:
             rotation_needed = angle_diff
+
+        if rotation_needed > 3 * np.pi / 2:
+            rotation_sign = -1
+            rotation_needed = 2 * np.pi - rotation_needed
 
         total_rotation_time = rotation_needed / self.rotation_speed
 

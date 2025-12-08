@@ -198,7 +198,7 @@ def pick_object(
     # for placing, always use downward orientation and moderate tolerances
     # relax more since gripper might be in awkward orientation after antipodal grasp to prevent ik failure
     place_pos_tol = 0.05
-    place_theta = 1.2
+    place_theta = 2
 
     q_place = solve_ik(
         plant,

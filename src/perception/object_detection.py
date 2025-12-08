@@ -19,17 +19,21 @@ def detect_and_locate_object(
     dbscan_min_samples=50,
     grasp_offset=0.00,
 ):
-    """
-    detect objects in scene and locate the target object using segmentation + ICP
-    and returns the transformation of the object in the world frame along with
-    the computed grasp position and segmented point cloud (with normals for antipodal grasping)
-    """
+    import psutil
+    import os
+    process = psutil.Process(os.getpid())
+    print(f"[detect] Memory at start: {process.memory_info().rss / 1024 / 1024:.1f} MB")
 
     pc = build_pointcloud(diagram, context)
-
+    print(f"[detect] Memory after build_pointcloud: {process.memory_info().rss / 1024 / 1024:.1f} MB")
+    print(f"[detect] Point cloud size: {pc.size()} points")
+    import gc
+    # fucking bullshit memory issues what the fuck
     object_clouds = segment_objects_clustering(
         pc, eps=dbscan_eps, min_samples=dbscan_min_samples
     )
+    del pc
+    gc.collect() 
     print(f"found {len(object_clouds)} object clusters {dbscan_eps}")
 
     if len(object_clouds) == 0:
@@ -45,13 +49,13 @@ def detect_and_locate_object(
     colors = [Rgba(1, 0, 0), Rgba(0, 1, 0), Rgba(0, 0, 1)]
 
     for i, obj_cloud in enumerate(object_clouds):
-        meshcat.SetObject(
-            f"detection/cluster_{i}",
-            obj_cloud,
-            point_size=0.01,
-            # rgba=colors[i],
-            rgba=colors[i % len(colors)],  # Wrap around if more than 6 clusters
-        )
+        # meshcat.SetObject(
+        #     f"detection/cluster_{i}",
+        #     obj_cloud,
+        #     point_size=0.01,
+        #     # rgba=colors[i],
+        #     rgba=colors[i % len(colors)],  # Wrap around if more than 6 clusters
+        # )
 
         print(f"\ncluster {i}:")
         name, pose, score = detector.match_object(obj_cloud)
