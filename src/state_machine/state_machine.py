@@ -59,7 +59,7 @@ class CafeStateMachine:
         if self.scenario_number == "one":
             self.object_queue = ["mug", "gelatin_box", "master_chef"]
         elif self.scenario_number == "two":
-            self.object_queue = ["potted_meat", "apple", "master_chef"]
+            self.object_queue = ["potted_meat", "apple", "tuna"]
         elif self.scenario_number == "three":
             self.object_queue = ["pudding", "tuna"]
         self.current_object_index = 0
@@ -104,7 +104,7 @@ class CafeStateMachine:
         self.acceleration = acceleration
         self.deceleration = deceleration
         self.max_speed = max_speed
-        self.slide_distance = 0.37
+        self.slide_distance = 0.5
         self.state_start_time = 0.0
         self.dt = 0.01
 
@@ -488,18 +488,16 @@ class CafeStateMachine:
         context = self.env.context
         
         q_current = plant.GetPositions(plant_context, iiwa_model)
-        
-        # Build desired positions
+
         q_desired = q_current.copy()
         q_desired[0] = x
         q_desired[1] = y
-        
-        # Build desired velocities (KEY FIX - this prevents teleporting!)
+        q_desired[2] = 0.1
+
         v_desired = np.zeros(10)
-        v_desired[0] = vx  # x velocity
-        v_desired[1] = vy  # y velocity
-        
-        # Set the desired state (controller will smoothly interpolate)
+        v_desired[0] = vx
+        v_desired[1] = vy
+
         cmd_source.set_q_desired(q_desired, v_desired)
         diagram.ForcedPublish(context)
     

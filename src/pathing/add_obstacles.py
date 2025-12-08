@@ -20,10 +20,11 @@ def add_obstacles(grid, tables, obstacles=None):
         x, y, _ = table['center_world']
         angle = table['angle_radians']
         
+        table_padding = ROBOT_RADIUS + 0.3
         if angle == 0.0:
-            grid.add_obstacle_rectangle(x, y, TABLE_LENGTH, TABLE_WIDTH, padding=ROBOT_RADIUS)
+            grid.add_obstacle_rectangle(x, y, TABLE_LENGTH, TABLE_WIDTH, padding=table_padding)
         else:
-            grid.add_obstacle_rectangle(x, y, TABLE_WIDTH, TABLE_LENGTH, padding=ROBOT_RADIUS)
+            grid.add_obstacle_rectangle(x, y, TABLE_WIDTH, TABLE_LENGTH, padding=table_padding)
     
     # Add detected obstacles (unknown objects)
     if obstacles is not None:
@@ -41,7 +42,7 @@ def add_obstacles(grid, tables, obstacles=None):
                 grid.add_obstacle_rectangle(x, y, w_world, h_world, padding=ROBOT_RADIUS)
     
     # Add static obstacle (robot base)
-    # grid.add_obstacle_circle(-0.35, 0.0, radius=0.3, padding=ROBOT_RADIUS)
+    grid.add_obstacle_circle(-0.35, 0.0, radius=0.3, padding=ROBOT_RADIUS)
 
 def add_obstacle_polygon(grid: Grid, world_points: List[Tuple[float, float, float]], padding: float = 0.0):
     """
