@@ -2,8 +2,9 @@
 from pathing.grid import Grid
 from pathing.astar import AStarPlanner
 from pathing.add_obstacles import add_obstacles
+from pathing.viz import visualize_grid_in_meshcat
 
-def plan_paths(tables, obstacles, start_config, to_visit):
+def plan_paths(tables, obstacles, start_config, to_visit, meshcat=None):
     grid = Grid(
         x_min=-5.0,
         x_max=5.0,
@@ -12,7 +13,9 @@ def plan_paths(tables, obstacles, start_config, to_visit):
         resolution=0.1  # 10cm cells
     )
     add_obstacles(grid, tables, obstacles)
-    # visualize_grid_in_meshcat(grid, env.meshcat, show_grid_lines=True)
+    # COMMENT OUT IF TOO SLOW (MAGGIE BING BONG)
+    # if meshcat is not None:
+    #     visualize_grid_in_meshcat(grid, meshcat, show_grid_lines=True)
     # Plan paths to each table
     planner = AStarPlanner(grid)
     all_paths = []

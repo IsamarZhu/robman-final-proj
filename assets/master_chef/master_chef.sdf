@@ -18,7 +18,7 @@
         <geometry>
           <mesh>
             <uri>google_16k/textured.obj</uri>
-            <scale>0.75 0.75 0.75</scale>
+            <scale>0.6 0.6 0.6</scale>
           </mesh>
         </geometry>
       </visual>
@@ -28,7 +28,7 @@
         <geometry>
           <mesh>
             <uri>google_16k/textured.obj</uri>
-            <scale>0.75 0.75 0.75</scale>
+            <scale>0.6 0.6 0.6</scale>
           </mesh>
         </geometry>
       </collision>

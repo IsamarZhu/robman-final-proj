@@ -42,7 +42,7 @@ class CafeStateMachine:
         move_time=2.5,
         grasp_time=2.0,
         lift_time=4.0,
-        dbscan_eps=0.03,
+        dbscan_eps=0.02,
         dbscan_min_samples=50,
         # navigation params
         paths=[],
@@ -57,7 +57,7 @@ class CafeStateMachine:
         self.current_state = CafeState.IDLE
         self.scenario_number = env.scenario_number
         if self.scenario_number == "one":
-            self.object_queue = ["mug", "gelatin_box", "master_chef"]
+            self.object_queue = ["mug", "gelatin_box", "apple"]
         elif self.scenario_number == "two":
             self.object_queue = ["potted_meat", "apple", "tuna"]
         elif self.scenario_number == "three":
@@ -414,11 +414,16 @@ class CafeStateMachine:
             self._update_robot_base_orientation(desired_theta, omega)
     
     def _start_slide_left(self):
-        """Start sliding left perpendicular to current orientation."""
-        slide_angle = self.current_theta + np.pi / 2
+        plant = self.env.plant
+        plant_context = self.env.plant_context
+        iiwa_model = self.env.iiwa_model
+        q_current = plant.GetPositions(plant_context, iiwa_model)
+        actual_theta = q_current[3]
+
+        slide_angle = actual_theta + np.pi / 2
         self.slide_direction = (np.cos(slide_angle), np.sin(slide_angle))
         self.slide_start_pos = self.current_position
-        
+
         self._transition_to_state(CafeState.NAVIGATE_SLIDE_LEFT)
         print(f"  Sliding left by {self.slide_distance}m")
     

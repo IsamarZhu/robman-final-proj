@@ -52,17 +52,35 @@ class AStarPlanner:
         
         return neighbors
     
-    def plan(self, start_world: Tuple[float, float], 
+    def _find_nearest_free_cell(self, center: Tuple[int, int], max_radius: int = 5) -> Optional[Tuple[int, int]]:
+        if not self.grid.is_occupied(*center):
+            return center
+
+        for radius in range(1, max_radius + 1):
+            for dx in range(-radius, radius + 1):
+                for dy in range(-radius, radius + 1):
+                    if abs(dx) == radius or abs(dy) == radius:
+                        candidate = (center[0] + dx, center[1] + dy)
+                        if self.grid.is_valid(*candidate) and not self.grid.is_occupied(*candidate):
+                            return candidate
+        return None
+
+    def plan(self, start_world: Tuple[float, float],
              goal_world: Tuple[float, float]) -> Optional[List[Tuple[float, float]]]:
         start_grid = self.grid.world_to_grid(*start_world)
         goal_grid = self.grid.world_to_grid(*goal_world)
-        
+
         if self.grid.is_occupied(*start_grid):
-            print(f"Start position {start_world} is occupied!")
-            return None
+            start_grid = self._find_nearest_free_cell(start_grid)
+            if start_grid is None:
+                print(f"Start position {start_world} and nearby cells are all occupied!")
+                return None
+
         if self.grid.is_occupied(*goal_grid):
-            print(f"Goal position {goal_world} is occupied!")
-            return None
+            goal_grid = self._find_nearest_free_cell(goal_grid)
+            if goal_grid is None:
+                print(f"Goal position {goal_world} and nearby cells are all occupied!")
+                return None
         
     
         open_set = [] 

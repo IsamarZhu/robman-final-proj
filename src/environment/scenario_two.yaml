@@ -16,23 +16,23 @@ directives:
     default_free_body_pose:
       base_link_meat:
         translation: [-4, 4.55, 0.72]
-        rotation: !Rpy { deg: [90, 0, 45] } # rotate handle away from gripper
+        rotation: !Rpy { deg: [0, 0, 45] } # rotate handle away from gripper
         
 - add_model:
     name: apple
     file: file:///workspaces/robman-final-proj/assets/apple/apple.sdf
     default_free_body_pose:
       base_link:
-        translation: [-3.85, 4.55, 0.67]
+        translation: [-3.8, 4.55, 0.67]
         rotation: !Rpy { deg: [-90, 0, 130] }
 
 - add_model:
-    name: master_chef
-    file: file:///workspaces/robman-final-proj/assets/master_chef/master_chef.sdf
+    name: tuna
+    file: file:///workspaces/robman-final-proj/assets/007_tuna_fish_can/tuna.sdf
     default_free_body_pose:
       base_link:
-        translation: [-3.75, 4.47, 0.7]
-        rotation: !Rpy { deg: [90, 0, 190] }
+        translation: [-3.9, 4.47, 0.7]
+        rotation: !Rpy { deg: [0, 0, 0] }
 
 
 
@@ -44,8 +44,8 @@ directives:
     parent: world
     child: table0::table_body
     X_PC:
-        translation: [-2.5, 1.75, 0.65] # moved table closer
-        rotation: !Rpy { deg: [0, 0, 90] }
+        translation: [-2.4, 1.1, 0.63] # moved table closer
+        rotation: !Rpy { deg: [0, 0, 0] }
 - add_model:
     name: chair0
     file: file:///workspaces/robman-final-proj/assets/WoodenChair/model.sdf

@@ -15,7 +15,7 @@ def detect_and_locate_object(
     context,
     meshcat,
     target_object="mug",
-    dbscan_eps=0.03,
+    dbscan_eps=0.01,
     dbscan_min_samples=50,
     grasp_offset=0.00,
 ):
@@ -30,7 +30,7 @@ def detect_and_locate_object(
     object_clouds = segment_objects_clustering(
         pc, eps=dbscan_eps, min_samples=dbscan_min_samples
     )
-    print(f"found {len(object_clouds)} object clusters")
+    print(f"found {len(object_clouds)} object clusters {dbscan_eps}")
 
     if len(object_clouds) == 0:
         raise RuntimeError("no objects detected in scene!")
@@ -49,8 +49,8 @@ def detect_and_locate_object(
             f"detection/cluster_{i}",
             obj_cloud,
             point_size=0.01,
-            rgba=colors[i],
-            # rgba=colors[i % len(colors)],  # Wrap around if more than 6 clusters
+            # rgba=colors[i],
+            rgba=colors[i % len(colors)],  # Wrap around if more than 6 clusters
         )
 
         print(f"\ncluster {i}:")

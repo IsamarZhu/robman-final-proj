@@ -61,36 +61,36 @@ def pick_object(
             print("No valid antipodal grasp found, falling back to downward grasp")
     
     # use antipodal grasp if found
-    if X_WG_grasp is not None:
-        print("Executing with antipodal grasp")
-        R_WG = X_WG_grasp.rotation()
-        p_grasp = X_WG_grasp.translation()
+    # if X_WG_grasp is not None:
+    #     print("Executing with antipodal grasp")
+    #     R_WG = X_WG_grasp.rotation()
+    #     p_grasp = X_WG_grasp.translation()
         
-        # debug: visualize the grasp pose
-        print(f"    Grasp position: {p_grasp}")
-        print(f"    Grasp x-axis (into object): {R_WG.multiply(np.array([1, 0, 0]))}")
+    #     # debug: visualize the grasp pose
+    #     print(f"    Grasp position: {p_grasp}")
+    #     print(f"    Grasp x-axis (into object): {R_WG.multiply(np.array([1, 0, 0]))}")
         
-        # visualize grasp frame
-        # meshcat.SetObject("grasp/antipodal_frame", Box(0.03, 0.03, 0.03), Rgba(0, 1, 1, 0.8))
-        # meshcat.SetTransform("grasp/antipodal_frame", X_WG_grasp)
+    #     # visualize grasp frame
+    #     # meshcat.SetObject("grasp/antipodal_frame", Box(0.03, 0.03, 0.03), Rgba(0, 1, 1, 0.8))
+    #     # meshcat.SetTransform("grasp/antipodal_frame", X_WG_grasp)
         
-        # Approach: back up along gripper x-axis (normal direction)
-        p_approach = p_grasp - approach_height * R_WG.multiply(np.array([1, 0, 0]))
+    #     # Approach: back up along gripper x-axis (normal direction)
+    #     p_approach = p_grasp - approach_height * R_WG.multiply(np.array([1, 0, 0]))
         
-        # Lift: back up along gripper x-axis
-        p_lift = p_grasp - lift_height * R_WG.multiply(np.array([1, 0, 0]))
-        p_lift_higher = p_grasp - (lift_height + 0.1) * R_WG.multiply(np.array([1, 0, 0]))
-    else:
-        # default when no antipodal grasp found downward grasp
-        R_WG = R_WG_down
-        
-        x, y, z_grasp = grasp_center_xyz
-        z_grasp += 0.05  # small offset to account for gripper finger length
-        
-        p_approach = np.array([x, y, z_grasp + approach_height])
-        p_grasp = np.array([x, y, z_grasp])
-        p_lift = np.array([x, y, z_grasp + lift_height])
-        p_lift_higher = np.array([x, y, z_grasp + lift_height + 0.1])  # 10cm higher
+    #     # Lift: back up along gripper x-axis
+    #     p_lift = p_grasp - lift_height * R_WG.multiply(np.array([1, 0, 0]))
+    #     p_lift_higher = p_grasp - (lift_height + 0.1) * R_WG.multiply(np.array([1, 0, 0]))
+    # else:
+    #     # default when no antipodal grasp found downward grasp
+    R_WG = R_WG_down
+    
+    x, y, z_grasp = grasp_center_xyz
+    z_grasp += 0.05  # small offset to account for gripper finger length
+    
+    p_approach = np.array([x, y, z_grasp + approach_height])
+    p_grasp = np.array([x, y, z_grasp])
+    p_lift = np.array([x, y, z_grasp + lift_height])
+    p_lift_higher = np.array([x, y, z_grasp + lift_height + 0.1])  # 10cm higher
 
     q_current = plant.GetPositions(plant_context, iiwa_model)
     current_base_x = q_current[0]
