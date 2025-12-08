@@ -167,6 +167,24 @@ directives:
     X_PC:
         translation: [-0.5, -2.8, 0.65] # moved table closer
         rotation: !Rpy { deg: [0, 0, 0] }
+- add_model:
+    name: chair2
+    file: file:///workspaces/robman-final-proj/assets/WoodenChair/model.sdf
+- add_weld:
+    parent: table2::table_body
+    child: chair2::body
+    X_PC:
+        translation: [-0.9, 0, -0.7]
+        rotation: !Rpy { deg: [0, 0, 0]}
+- add_model:
+    name: person2
+    file: file:///workspaces/robman-final-proj/assets/VisitorKidSit/model.sdf
+- add_weld:
+    parent: chair2::body
+    child: person2::body
+    X_PC:
+        translation: [-0.1, 0.0, 0.0]
+        rotation: !Rpy { deg: [0, 0, 90]}
 
 - add_model:
     name: kitchen
