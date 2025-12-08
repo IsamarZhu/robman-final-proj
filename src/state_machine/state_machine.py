@@ -17,7 +17,7 @@ LIFT_HEIGHT = 0.2
 GRASP_OFFSET = 0.00
 
 # gripper settings
-WSG_OPEN = 0.107
+WSG_OPEN = 0.15
 WSG_CLOSED = 0.015
 
 # timing
@@ -37,7 +37,7 @@ class CafeStateMachine:
         approach_height=0.15,
         lift_height=0.20,
         grasp_offset=0.00,
-        wsg_open=0.107,
+        wsg_open=0.15,
         wsg_closed=0.015,
         move_time=2.5,
         grasp_time=2.0,
@@ -104,9 +104,12 @@ class CafeStateMachine:
         self.acceleration = acceleration
         self.deceleration = deceleration
         self.max_speed = max_speed
-        self.slide_distance = 0.37
+        self.slide_distance = 0.30
         self.state_start_time = 0.0
         self.dt = 0.01
+
+        # hold arm configuration during base navigation to prevent droop due to grav
+        self.nav_hold_q = None
 
     def run(self, dt=0.01, max_time=300.0):
         print("\n=== Starting Cafe State Machine ===")
@@ -219,6 +222,12 @@ class CafeStateMachine:
     def move_state(self):
         print("\n[MOVE]")
         self.env.settle_scene(duration=2.0)
+
+        # hold arm joints to current configuration for navigation to prevent slow droop due to gravity
+        plant = self.env.plant
+        plant_context = self.env.plant_context
+        iiwa_model = self.env.iiwa_model
+        self.nav_hold_q = plant.GetPositions(plant_context, iiwa_model).copy()
 
         self.current_object_index += 1
         self.current_path_idx += 1
@@ -489,8 +498,12 @@ class CafeStateMachine:
         
         q_current = plant.GetPositions(plant_context, iiwa_model)
         
-        # Build desired positions
-        q_desired = q_current.copy()
+        # Build desired positions, holding arm joints fixed during navigation
+        if self.nav_hold_q is not None:
+            q_desired = self.nav_hold_q.copy()
+            q_desired[3] = q_current[3]  # keep current yaw; updated elsewhere
+        else:
+            q_desired = q_current.copy()
         q_desired[0] = x
         q_desired[1] = y
         
@@ -513,7 +526,12 @@ class CafeStateMachine:
         context = self.env.context
 
         q_current = plant.GetPositions(plant_context, iiwa_model)
-        q_desired = q_current.copy()
+        if self.nav_hold_q is not None:
+            q_desired = self.nav_hold_q.copy()
+            q_desired[0] = q_current[0]
+            q_desired[1] = q_current[1]
+        else:
+            q_desired = q_current.copy()
         q_desired[3] = theta
 
         v_desired = np.zeros(10)
