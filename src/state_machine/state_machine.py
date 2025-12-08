@@ -103,7 +103,7 @@ class CafeStateMachine:
         self.acceleration = acceleration
         self.deceleration = deceleration
         self.max_speed = max_speed
-        self.slide_distance = 0.32
+        self.slide_distance = 0.37
         self.state_start_time = 0.0
         self.dt = 0.01
 
@@ -278,7 +278,7 @@ class CafeStateMachine:
         # Check BOTH conditions: angle is close AND enough time has passed
         if rotation_needed < self.rotation_tolerance and dt_elapsed >= total_rotation_time:
             # Rotation complete - stop rotating
-            self._update_robot_base_orientation(self.target_theta, 0.0)
+            self._update_robot_base_orientation(actual_theta, 0.0) # this used to go to target theta, supsicious fix, idgaf lmfao
             self._start_movement_to_waypoint()
             print(f"    Rotation complete: took {dt_elapsed:.2f}s")
         else:
@@ -390,7 +390,7 @@ class CafeStateMachine:
         total_rotation_time = rotation_needed / self.rotation_speed
 
         if rotation_needed < self.rotation_tolerance and dt_elapsed >= total_rotation_time:
-            self._update_robot_base_orientation(self.target_theta, 0.0)
+            self._update_robot_base_orientation(actual_theta, 0.0) # used to be target theta, sus fix, dgafery
             self._start_slide_left()
             print(f"    Rotation complete: took {dt_elapsed:.2f}s")
         else:

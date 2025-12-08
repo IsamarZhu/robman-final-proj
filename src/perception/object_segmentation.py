@@ -61,7 +61,7 @@ def build_pointcloud(diagram, context) -> PointCloud:
     pc0 = diagram.GetOutputPort("camera0.point_cloud").Eval(context)
     pc1 = diagram.GetOutputPort("camera1.point_cloud").Eval(context)
     pc2 = diagram.GetOutputPort("camera2.point_cloud").Eval(context)
-    pc3 = diagram.GetOutputPort("camera3.point_cloud").Eval(context)
+    # pc3 = diagram.GetOutputPort("camera3.point_cloud").Eval(context)
 
 
     # OMFG THESE POINTCLOUDS, ADD THIS BACK IN IF YOU WANT 4 CAMERAS, -MAGGIE
