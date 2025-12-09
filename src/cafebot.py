@@ -55,8 +55,8 @@ def main():
     elif args.scenario == "three":
         to_visit = [
             tables[2]['waypoints_padded'][1],
-            tables[1]['waypoints_padded'][1],
-            tables[0]['waypoints_padded'][2],
+            tables[0]['waypoints_padded'][3],
+            tables[1]['waypoints_padded'][3],
         ]
     all_paths = plan_paths(tables, obstacles, start_config, to_visit, env.meshcat)
     state_machine = CafeStateMachine(
