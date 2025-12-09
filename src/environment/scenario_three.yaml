@@ -15,15 +15,15 @@ directives:
     default_free_body_pose:
       base_link:
         translation: [-4, 4.55, 0.72]
-        rotation: !Rpy { deg: [0, 0, 45] } # rotate handle away from gripper
+        rotation: !Rpy { deg: [0, 0, 70] } # rotate handle away from gripper
 - add_model:
-    name: orange
-    file: file:///workspaces/robman-final-proj/assets/017_orange/orange.sdf
+    name: banana
+    file: file:///workspaces/robman-final-proj/assets/011_banana/banana.sdf
     default_free_body_pose:
       base_link:
         translation: [-3.8, 4.49, 0.61]
         # rotation: !Rpy { deg: [0, 0, 190] }
-        rotation: !Rpy { deg: [0, 0, 90] }
+        rotation: !Rpy { deg: [0, 0, 0] }
 # - add_weld:
 #     parent: world
 #     child: cupd::base_link
@@ -38,7 +38,7 @@ directives:
     parent: world
     child: plant1::body
     X_PC:
-        translation: [-0.9, 0, 0.0]
+        translation: [-0.5, 1, 0.0]
         rotation: !Rpy { deg: [90, 0, 40]}
 # - add_model:
 #     name: plant2
@@ -95,7 +95,7 @@ directives:
     parent: world
     child: table0::table_body
     X_PC:
-        translation: [-1.5, -2, 0.65] # moved table closer
+        translation: [-1.7, -2.3, 0.65] # moved table closer
         rotation: !Rpy { deg: [0, 0, 90] }
 - add_model:
     name: chair0

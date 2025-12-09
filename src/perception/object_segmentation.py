@@ -171,7 +171,8 @@ class ObjectDetector:
             self.mesh_templates = {
                 "pudding": Path("/workspaces/robman-final-proj/assets/008_pudding_box/google_16k/textured.obj"),
                 # "tuna": Path("/workspaces/robman-final-proj/assets/007_tuna_fish_can/google_16k/textured.obj"),
-                "cupd": Path("/workspaces/robman-final-proj/assets/065-d_cups/google_16k/textured.obj"),
+                # "cupd": Path("/workspaces/robman-final-proj/assets/065-d_cups/google_16k/textured.obj"),
+                "banana": Path("/workspaces/robman-final-proj/assets/011_banana/google_16k/textured.obj"),
             }
         
         
@@ -185,7 +186,7 @@ class ObjectDetector:
             elif name == "pudding":
                 mesh.apply_scale(0.75)
             elif name == "master_chef":
-                mesh.apply_scale(0.70)
+                mesh.apply_scale(0.50)
             elif name == "gelatin_box":
                 mesh.apply_scale(0.90)
 
