@@ -23,7 +23,7 @@ directives:
       base_link:
         translation: [-3.82, 4.42, 0.61]
         # rotation: !Rpy { deg: [0, 0, 190] }
-        rotation: !Rpy { deg: [0, 0, -60] }
+        rotation: !Rpy { deg: [0, 0, -80] }
 - add_model:
     name: tomato_soup
     file: file:///workspaces/robman-final-proj/assets/005_tomato_soup_can/tomato_soup.sdf
@@ -47,24 +47,24 @@ directives:
     X_PC:
         translation: [-3.9, 0.3, 0.0]
         rotation: !Rpy { deg: [90, 0, 20]}
-# - add_model:
-#     name: plant2
-#     file: file:///workspaces/robman-final-proj/assets/low_poly_tree/treelarge.sdf
-# - add_weld:
-#     parent: world
-#     child: plant2::body
-#     X_PC:
-#         translation: [-3, -4, 0.0]
-#         rotation: !Rpy { deg: [90, 0, -80]}
-# - add_model:
-#     name: plant3
-#     file: file:///workspaces/robman-final-proj/assets/low_poly_tree/treelarge.sdf
-# - add_weld:
-#     parent: world
-#     child: plant3::body
-#     X_PC:
-#         translation: [4, -4, 0.0]
-#         rotation: !Rpy { deg: [90, 0, -120]}
+- add_model:
+    name: plant2
+    file: file:///workspaces/robman-final-proj/assets/low_poly_tree/treelarge.sdf
+- add_weld:
+    parent: world
+    child: plant2::body
+    X_PC:
+        translation: [3.7, 1.1, 0.0]
+        rotation: !Rpy { deg: [90, 0, 90]}
+- add_model:
+    name: plant3
+    file: file:///workspaces/robman-final-proj/assets/low_poly_tree/treelarge.sdf
+- add_weld:
+    parent: world
+    child: plant3::body
+    X_PC:
+        translation: [3.8, -3.7, 0.0]
+        rotation: !Rpy { deg: [90, 0, -120]}
 
 - add_model:
     name: bush1
@@ -75,24 +75,24 @@ directives:
     X_PC:
         translation: [-1, 0, -0.3]
         rotation: !Rpy { deg: [90, 0, -120]}
-# - add_model:
-#     name: bush2
-#     file: file:///workspaces/robman-final-proj/assets/bush/bush.sdf
-# - add_weld:
-#     parent: world
-#     child: bush2::body
-#     X_PC:
-#         translation: [-2, 2.9, -0.3]
-#         rotation: !Rpy { deg: [90, 0, 70]}
-# - add_model:
-#     name: bush3
-#     file: file:///workspaces/robman-final-proj/assets/bush/bush.sdf
-# - add_weld:
-#     parent: world
-#     child: bush3::body
-#     X_PC:
-#         translation: [2, -3.2, -0.3]
-#         rotation: !Rpy { deg: [90, 0, 70]}
+- add_model:
+    name: bush2
+    file: file:///workspaces/robman-final-proj/assets/bush/bush.sdf
+- add_weld:
+    parent: world
+    child: bush2::body
+    X_PC:
+        translation: [-0.5, -0.95, -0.3]
+        rotation: !Rpy { deg: [90, 0, 70]}
+- add_model:
+    name: bush3
+    file: file:///workspaces/robman-final-proj/assets/bush/bush.sdf
+- add_weld:
+    parent: world
+    child: bush3::body
+    X_PC:
+        translation: [0, 3.8, -0.3]
+        rotation: !Rpy { deg: [90, 0, 70]}
 
 
 - add_model:
