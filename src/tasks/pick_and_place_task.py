@@ -21,7 +21,7 @@ class PickAndPlaceTask:
         dbscan_eps=0.03,
         dbscan_min_samples=50,
         use_antipodal_grasping=True,
-        num_grasp_samples=500,
+        num_grasp_samples=2000,
     ):
         self.env = env
         self.approach_height = approach_height
@@ -65,6 +65,7 @@ class PickAndPlaceTask:
                 object_cloud,
                 rng=np.random.default_rng(),
                 num_samples=self.num_grasp_samples,
+                meshcat=self.env.meshcat,
             )
             
             if X_WG_grasp is not None:
