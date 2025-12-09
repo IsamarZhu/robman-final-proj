@@ -63,8 +63,8 @@ directives:
     parent: world
     child: plant3::body
     X_PC:
-        translation: [3.8, -3.7, 0.0]
-        rotation: !Rpy { deg: [90, 0, -120]}
+        translation: [3.5, -3.5, 0.0]
+        rotation: !Rpy { deg: [90, 0, -180]}
 
 - add_model:
     name: bush1
