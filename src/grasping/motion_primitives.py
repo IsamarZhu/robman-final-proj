@@ -79,7 +79,7 @@ def pick_object(
         # Extract x, y, z from grasp position for lift/place calculations
         x = p_grasp[0]
         y = p_grasp[1]
-        z_grasp = p_grasp[2]
+        z_grasp = p_grasp[2]-0.03
     else:
         # Default when no antipodal grasp found: downward grasp
         R_WG = R_WG_down

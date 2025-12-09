@@ -173,6 +173,7 @@ class ObjectDetector:
                 # "tuna": Path("/workspaces/robman-final-proj/assets/007_tuna_fish_can/google_16k/textured.obj"),
                 # "cupd": Path("/workspaces/robman-final-proj/assets/065-d_cups/google_16k/textured.obj"),
                 "banana": Path("/workspaces/robman-final-proj/assets/011_banana/google_16k/textured.obj"),
+                "tomato_soup": Path("/workspaces/robman-final-proj/assets/005_tomato_soup_can/google_16k/textured.obj"),
             }
         
         
@@ -189,6 +190,8 @@ class ObjectDetector:
                 mesh.apply_scale(0.50)
             elif name == "gelatin_box":
                 mesh.apply_scale(0.90)
+            elif name == "tomato_soup":
+                mesh.apply_scale(0.85)
 
 
             cloud_points, _ = trimesh.sample.sample_surface(mesh, 1000)

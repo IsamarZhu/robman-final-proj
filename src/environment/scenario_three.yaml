@@ -14,21 +14,28 @@ directives:
     file: file:///workspaces/robman-final-proj/assets/008_pudding_box/pudding.sdf
     default_free_body_pose:
       base_link:
-        translation: [-4, 4.55, 0.72]
-        rotation: !Rpy { deg: [0, 0, 70] } # rotate handle away from gripper
+        translation: [-4, 4.46, 0.72]
+        rotation: !Rpy { deg: [0, 0, 50] } # rotate handle away from gripper
 - add_model:
     name: banana
     file: file:///workspaces/robman-final-proj/assets/011_banana/banana.sdf
     default_free_body_pose:
       base_link:
-        translation: [-3.8, 4.49, 0.61]
+        translation: [-3.82, 4.42, 0.61]
         # rotation: !Rpy { deg: [0, 0, 190] }
+        rotation: !Rpy { deg: [0, 0, -60] }
+- add_model:
+    name: tomato_soup
+    file: file:///workspaces/robman-final-proj/assets/005_tomato_soup_can/tomato_soup.sdf
+    default_free_body_pose:
+      base_link:
+        translation: [-3.91, 4.56, 0.61]
         rotation: !Rpy { deg: [0, 0, 0] }
 # - add_weld:
 #     parent: world
-#     child: cupd::base_link
+#     child: tomato_soup::base_link
 #     X_PC:
-#         translation: [-3.8, 4.49, 0.6]
+#         translation: [-3.91, 4.54, 0.59]
 #         rotation: !Rpy { deg: [0, 0, 0]}
 
 - add_model:
@@ -38,7 +45,7 @@ directives:
     parent: world
     child: plant1::body
     X_PC:
-        translation: [-3.9, 0.7, 0.0]
+        translation: [-3.9, 0.3, 0.0]
         rotation: !Rpy { deg: [90, 0, 20]}
 # - add_model:
 #     name: plant2
@@ -59,15 +66,15 @@ directives:
 #         translation: [4, -4, 0.0]
 #         rotation: !Rpy { deg: [90, 0, -120]}
 
-# - add_model:
-#     name: bush1
-#     file: file:///workspaces/robman-final-proj/assets/bush/bush.sdf
-# - add_weld:
-#     parent: world
-#     child: bush1::body
-#     X_PC:
-#         translation: [1, 1.5, -0.3]
-#         rotation: !Rpy { deg: [90, 0, 30]}
+- add_model:
+    name: bush1
+    file: file:///workspaces/robman-final-proj/assets/bush/bush.sdf
+- add_weld:
+    parent: world
+    child: bush1::body
+    X_PC:
+        translation: [-1, 0, -0.3]
+        rotation: !Rpy { deg: [90, 0, -120]}
 # - add_model:
 #     name: bush2
 #     file: file:///workspaces/robman-final-proj/assets/bush/bush.sdf
@@ -95,7 +102,7 @@ directives:
     parent: world
     child: table0::table_body
     X_PC:
-        translation: [-1.7, -2.3, 0.65] # moved table closer
+        translation: [-1.9, -1.7, 0.65] # moved table closer
         rotation: !Rpy { deg: [0, 0, 270] }
 - add_model:
     name: chair0
@@ -159,24 +166,24 @@ directives:
     X_PC:
         translation: [1, 0.5, 0.65] # moved table closer
         rotation: !Rpy { deg: [0, 0, 90] }
-# - add_model:
-#     name: chair2
-#     file: file:///workspaces/robman-final-proj/assets/WoodenChair/model.sdf
-# - add_weld:
-#     parent: table2::table_body
-#     child: chair2::body
-#     X_PC:
-#         translation: [0.9, 0, -0.7]
-#         rotation: !Rpy { deg: [0, 0, 0]}
-# - add_model:
-#     name: person2
-#     file: file:///workspaces/robman-final-proj/assets/VisitorKidSit/model.sdf
-# - add_weld:
-#     parent: chair2::body
-#     child: person2::body
-#     X_PC:
-#         translation: [-0.1, 0.0, 0.0]
-#         rotation: !Rpy { deg: [0, 0, 90]}
+- add_model:
+    name: chair2
+    file: file:///workspaces/robman-final-proj/assets/WoodenChair/model.sdf
+- add_weld:
+    parent: table2::table_body
+    child: chair2::body
+    X_PC:
+        translation: [0.9, 0, -0.7]
+        rotation: !Rpy { deg: [0, 0, 180]}
+- add_model:
+    name: person2
+    file: file:///workspaces/robman-final-proj/assets/VisitorKidSit/model.sdf
+- add_weld:
+    parent: chair2::body
+    child: person2::body
+    X_PC:
+        translation: [-0.1, 0.0, 0.0]
+        rotation: !Rpy { deg: [0, 0, 90]}
 
 
 
