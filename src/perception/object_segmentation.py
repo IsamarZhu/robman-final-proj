@@ -32,7 +32,7 @@ MUG_MESH_PATH = Path("/workspaces/robman-final-proj/assets/mug/google_16k/textur
 
 MAX_ICP_ITERS = 25
 VOXEL_SIZE = 0.005
-PLATE_HEIGHT = 0.61
+PLATE_HEIGHT = 0.597
 N_SAMPLE_POINTS = 1500
             
 # downsamples the point cloud
@@ -184,7 +184,9 @@ class ObjectDetector:
             elif name == "pudding":
                 mesh.apply_scale(0.75)
             elif name == "master_chef":
-                mesh.apply_scale(0.5)
+                mesh.apply_scale(0.70)
+            elif name == "gelatin_box":
+                mesh.apply_scale(0.90)
 
 
             cloud_points, _ = trimesh.sample.sample_surface(mesh, 1000)

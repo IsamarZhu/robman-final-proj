@@ -24,10 +24,10 @@ def pick_object(
     object_top_z,
     approach_height=0.15,
     lift_height=0.20,
-    wsg_open=0.107,
-    wsg_closed=0.080,
-    move_time=2.5,
-    grasp_time=2.0,
+    wsg_open=0.15,
+    wsg_closed=0.015,
+    move_time=3.0,
+    grasp_time=3.0,
     lift_time=4.0,
     object_cloud=None,
 ):
@@ -49,46 +49,45 @@ def pick_object(
     X_WG_grasp = None
     if object_cloud is not None:
         from grasping.antipodal_grasping import get_best_antipodal_grasp
+        
         print("Finding antipodal grasp...")
         X_WG_grasp = get_best_antipodal_grasp(
             object_cloud,
             rng=np.random.default_rng(),
-            num_samples=500,
+            num_samples=3000,
+            meshcat=meshcat,
         )
         if X_WG_grasp is not None:
             print("Found antipodal grasp, executing with antipodal approach")
         else:
             print("No valid antipodal grasp found, falling back to downward grasp")
     
-    # use antipodal grasp if found
-    # if X_WG_grasp is not None:
-    #     print("Executing with antipodal grasp")
-    #     R_WG = X_WG_grasp.rotation()
-    #     p_grasp = X_WG_grasp.translation()
+    # Use antipodal grasp if found
+    if X_WG_grasp is not None:
+        R_WG = X_WG_grasp.rotation()
+        p_grasp = X_WG_grasp.translation()
         
-    #     # debug: visualize the grasp pose
-    #     print(f"    Grasp position: {p_grasp}")
-    #     print(f"    Grasp x-axis (into object): {R_WG.multiply(np.array([1, 0, 0]))}")
+        # For antipodal grasps:
+        #   Keep gripper orientation from antipodal solver
+        #   Approach vertically (world +z) to descend straight down
+        p_approach = p_grasp + np.array([0.0, 0.0, approach_height])
         
-    #     # visualize grasp frame
-    #     # meshcat.SetObject("grasp/antipodal_frame", Box(0.03, 0.03, 0.03), Rgba(0, 1, 1, 0.8))
-    #     # meshcat.SetTransform("grasp/antipodal_frame", X_WG_grasp)
+        print(f"  Antipodal grasp at: [{p_grasp[0]:.3f}, {p_grasp[1]:.3f}, {p_grasp[2]:.3f}]")
+        print(f"  Approach offset (vertical): [0.000, 0.000, {approach_height:.3f}]")
+        print(f"  Approach position: [{p_approach[0]:.3f}, {p_approach[1]:.3f}, {p_approach[2]:.3f}]")
         
-    #     # Approach: back up along gripper x-axis (normal direction)
-    #     p_approach = p_grasp - approach_height * R_WG.multiply(np.array([1, 0, 0]))
-        
-    #     # Lift: back up along gripper x-axis
-    #     p_lift = p_grasp - lift_height * R_WG.multiply(np.array([1, 0, 0]))
-    #     p_lift_higher = p_grasp - (lift_height + 0.1) * R_WG.multiply(np.array([1, 0, 0]))
-    # else:
-    #     # default when no antipodal grasp found downward grasp
-    R_WG = R_WG_down
+        # Extract x, y, z from grasp position for lift/place calculations
+        x = p_grasp[0]
+        y = p_grasp[1]
+        z_grasp = p_grasp[2]
+    else:
+        # Default when no antipodal grasp found: downward grasp
+        R_WG = R_WG_down
+        x, y, z_grasp = grasp_center_xyz
+        z_grasp += 0.05  # small offset to account for gripper finger length
+        p_grasp = np.array([x, y, z_grasp])
+        p_approach = np.array([x, y, z_grasp + approach_height])
     
-    x, y, z_grasp = grasp_center_xyz
-    z_grasp += 0.05  # small offset to account for gripper finger length
-    
-    p_approach = np.array([x, y, z_grasp + approach_height])
-    p_grasp = np.array([x, y, z_grasp])
     p_lift = np.array([x, y, z_grasp + lift_height])
     p_lift_higher = np.array([x, y, z_grasp + lift_height + 0.1])  # 10cm higher
 
@@ -128,11 +127,12 @@ def pick_object(
     # For downward grasps, also relax for better reachability but keep stricter 
     if X_WG_grasp is not None:
         # for antipodal only enforce grasp orientation tightly, relax everything else
-        approach_theta = 1.5  # very relaxed for approach
-        grasp_theta = 0.5     # moderate for actual grasp
-        lift_theta = 1.5      # very relaxed for lift/place
-        approach_pos_tol = 0.01  # tighter position tolerance for centering
-        grasp_pos_tol = 0.008     # very tight for actual grasp
+        # Tighter orientation bounds to keep gripper more upright/consistent
+        approach_theta = 0.4 # tighter for antipodal
+        grasp_theta = 0.4 # tighter for antipodal
+        lift_theta = 1.0 # moderate for lift/place so ik doenst fail
+        approach_pos_tol = 0.012  # a bit looser to avoid edge catch from IK drift
+        grasp_pos_tol = 0.010     # tight but not extreme
         lift_pos_tol = 0.03      # moderate for lift/place
     else:
         # Downward: relaxed constraints for better reachability
@@ -282,8 +282,8 @@ def pick_object(
     print("3. descend to grasp position")
     move_to_smooth(q_grasp, wsg_open, move_time)
 
-    print("4. close gripper to grasp")
-    move_to_smooth(q_grasp, wsg_closed, grasp_time)
+    print("4. close gripper to grasp (slower)")
+    move_to_smooth(q_grasp, wsg_closed, grasp_time * 2.5)
 
     print("5. lift object (slower)")
     move_to_smooth(q_lift, wsg_closed, lift_time)
