@@ -127,13 +127,13 @@ def pick_object(
     # For downward grasps, also relax for better reachability but keep stricter 
     if X_WG_grasp is not None:
         # for antipodal only enforce grasp orientation tightly, relax everything else
-        # Tighter orientation bounds to keep gripper more upright/consistent
-        approach_theta = 0.4 # tighter for antipodal
-        grasp_theta = 0.4 # tighter for antipodal
-        lift_theta = 1.0 # moderate for lift/place so ik doenst fail
-        approach_pos_tol = 0.012  # a bit looser to avoid edge catch from IK drift
-        grasp_pos_tol = 0.010     # tight but not extreme
-        lift_pos_tol = 0.03      # moderate for lift/place
+        # Tighter orientation/position bounds to hit contact points more accurately
+        approach_theta = 0.30
+        grasp_theta = 0.25
+        lift_theta = 0.80
+        approach_pos_tol = 0.008
+        grasp_pos_tol = 0.006
+        lift_pos_tol = 0.020
     else:
         # Downward: relaxed constraints for better reachability
         approach_theta = 0.5
