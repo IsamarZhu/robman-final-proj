@@ -60,7 +60,7 @@ class CafeStateMachine:
         if self.scenario_number == "one":
             self.object_queue = ["mug", "gelatin_box", "apple"]
         elif self.scenario_number == "two":
-            self.object_queue = ["potted_meat", "master_chef", "tuna"]
+            self.object_queue = ["potted_meat", "tuna", "master_chef"]
         elif self.scenario_number == "three":
             self.object_queue = ["pudding", "banana", "tomato_soup"]
         self.current_object_index = 0

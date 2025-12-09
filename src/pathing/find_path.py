@@ -14,8 +14,8 @@ def plan_paths(tables, obstacles, start_config, to_visit, meshcat=None):
     )
     add_obstacles(grid, tables, obstacles)
     # COMMENT OUT IF TOO SLOW (MAGGIE BING BONG)
-    if meshcat is not None:
-        visualize_grid_in_meshcat(grid, meshcat, show_grid_lines=True)
+    # if meshcat is not None:
+    #     visualize_grid_in_meshcat(grid, meshcat, show_grid_lines=True)
     # Plan paths to each table
     planner = AStarPlanner(grid)
     all_paths = []
