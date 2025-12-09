@@ -170,7 +170,8 @@ class ObjectDetector:
         elif scenario_number == "three":
             self.mesh_templates = {
                 "pudding": Path("/workspaces/robman-final-proj/assets/008_pudding_box/google_16k/textured.obj"),
-                "tuna": Path("/workspaces/robman-final-proj/assets/007_tuna_fish_can/google_16k/textured.obj"),
+                # "tuna": Path("/workspaces/robman-final-proj/assets/007_tuna_fish_can/google_16k/textured.obj"),
+                "cupd": Path("/workspaces/robman-final-proj/assets/065-d_cups/google_16k/textured.obj"),
             }
         
         
