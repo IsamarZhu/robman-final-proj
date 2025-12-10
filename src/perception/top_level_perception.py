@@ -4,6 +4,7 @@ from pydrake.perception import DepthImageToPointCloud
 from pydrake.math import RigidTransform
 from pydrake.all import PointCloud
 import numpy as np
+import cv2
 from perception.obstacle_detection import detect_obstacles_from_img
 from perception.table_detection import detect_tables_from_img
 from perception.config import CROP_X_START, CROP_X_END, CROP_Y_START, CROP_Y_END, ROBOT_RADIUS
@@ -138,6 +139,16 @@ def perceive_scene(station, station_context):
         (topview_camera_depth.height(), topview_camera_depth.width())
     )
     depth_array_cropped = depth_array[CROP_Y_START:CROP_Y_END, CROP_X_START:CROP_X_END]
+
+    # write image to file
+    topview_rgb_image = station.GetOutputPort("topview_camera.rgb_image").Eval(station_context)
+    color_array = np.copy(topview_rgb_image.data).reshape(
+        (topview_rgb_image.height(), topview_rgb_image.width(), 4)
+    )
+    color_array_cropped = color_array[CROP_Y_START:CROP_Y_END, CROP_X_START:CROP_X_END, :3]
+    cv2.imwrite("/workspaces/robman-final-proj/topview_color_image.png", color_array_cropped)
+    # cv2.imwrite("/workspaces/robman-final-proj/topview_depth_image.png", (depth_array_cropped * 255).astype(np.uint8))
+
 
     tables = detect_tables_from_img(depth_array_cropped)
     obstacles = detect_obstacles_from_img(depth_array_cropped)

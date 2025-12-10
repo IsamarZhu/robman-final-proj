@@ -7,7 +7,8 @@ from pydrake.geometry import Rgba
 from pathing.viz import (
     visualize_robot_config,
     visualize_grid_in_meshcat,
-    visualize_scene_detection
+    visualize_scene_detection,
+    visualize_all_paths,
 )
 from state_machine.state_machine import CafeStateMachine
 
@@ -35,7 +36,14 @@ def main():
     station_context = station.GetMyContextFromRoot(env.context)
     
     tables, obstacles = perceive_scene(station, station_context)
-    visualize_scene_detection(station, station_context, tables, obstacles)
+    # visualize_obstacles_on_topview(
+    #     station,
+    #     station_context,
+    #     obstacles,
+    #     padding_world=0.37,  # ROBOT_RADIUS
+    #     output_path="my_visualization.png"
+    # )
+    # visualize_scene_detection(station, station_context, tables, obstacles)
     start_config = env.plant.GetPositions(env.plant_context, env.iiwa_model)
     table_centers = [table['center_world'] for table in tables]
     # print(args.scenario)
@@ -59,6 +67,8 @@ def main():
             tables[1]['waypoints_padded'][3],
         ]
     all_paths = plan_paths(tables, obstacles, start_config, to_visit, env.meshcat)
+    # visualize_all_paths(env.meshcat, all_paths)
+
     state_machine = CafeStateMachine(
         env=env,
         # Pick/place parameters

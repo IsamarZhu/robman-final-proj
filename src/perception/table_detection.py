@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from pathlib import Path
+from PIL import Image
 
 
 TABLE_INTENSITY_MIN = 90
@@ -27,10 +28,10 @@ def detect_tables_from_img(depth_array):
     else:
         depth_normalized = np.zeros_like(depth_array_vis)
 
-    # depth_image = Image.fromarray(depth_normalized.astype(np.uint8))
-    # depth_output_path = Path("/workspaces/robman-final-proj/original_depth.png")
-    # depth_image.save(depth_output_path)
-    # print(f"Cropped depth image saved to {depth_output_path}")
+    depth_image = Image.fromarray(depth_normalized.astype(np.uint8))
+    depth_output_path = Path("/workspaces/robman-final-proj/original_depth.png")
+    depth_image.save(depth_output_path)
+    print(f"Cropped depth image saved to {depth_output_path}")
     
     thresh = np.where((depth_normalized > TABLE_INTENSITY_MIN) & (depth_normalized <= TABLE_INTENSITY_MAX), 255, 0).astype(np.uint8)
     kernel_small = np.ones((3, 3), np.uint8)
@@ -81,6 +82,25 @@ def detect_tables_from_img(depth_array):
 
     # for debugging
     result_img = cv2.cvtColor(depth_normalized.astype(np.uint8), cv2.COLOR_GRAY2BGR)
+
+    ##############################
+    # Draw both table and non-table contours
+    ##############################
+    debug_img = cv2.cvtColor(thresh.astype(np.uint8), cv2.COLOR_GRAY2BGR)
+    table_ids = {id(cnt) for cnt in table_contours}
+
+    for cnt in contours:   # <--- use original contours
+        # classify based on identity
+        is_table = id(cnt) in table_ids
+        color = (0, 255, 0) if is_table else (0, 0, 255)
+
+        cv2.drawContours(debug_img, [cnt], -1, color, 2)
+
+
+    labeled_output = Path("/workspaces/robman-final-proj/table_vs_non_table.png")
+    cv2.imwrite(str(labeled_output), debug_img)
+
+    print(f"Labeled contours saved to: {labeled_output}")
 
     tables_info = []
     for i, contour in enumerate(table_contours):

@@ -3,6 +3,7 @@ from pydrake.math import RigidTransform, RotationMatrix
 import numpy as np
 import cv2
 from pathlib import Path
+from pydrake.geometry import Cylinder
 from perception.config import (
     CORNER_EXCLUSION_X,
     CORNER_EXCLUSION_Y,
@@ -178,6 +179,39 @@ def visualize_robot_config(meshcat, x, y, theta, label="robot", color=None):
     meshcat.SetTransform(path_arrow, arrow_transform)
 
 
+def visualize_path_grid_cells(meshcat, path, grid, color=None, label="path_cells"):
+    """
+    Visualize a path in meshcat as grid cells (blue squares on the grid).
+    
+    Args:
+        meshcat: Meshcat visualizer instance
+        path: List of (x, y) tuples representing waypoints in world coordinates
+        grid: Grid object for getting cell size
+        color: Rgba color for the cells (default: blue)
+        label: Name for this path visualization
+    """
+    if color is None:
+        color = Rgba(0.0, 0.0, 1.0, 0.6)  # Blue, semi-transparent
+    
+    if len(path) == 0:
+        return
+    
+    cell_size = grid.resolution
+    cell_height = 0.15  # Slightly taller than grid cells to stand out
+    
+    for i, (wx, wy) in enumerate(path):
+        # Create a box for this cell
+        box = Box(cell_size * 0.9, cell_size * 0.9, cell_height)
+        path_name = f"{label}/cells/cell_{i}"
+        meshcat.SetObject(path_name, box, color)
+        
+        # Position at the waypoint
+        transform = RigidTransform([wx, wy, cell_height / 2])
+        meshcat.SetTransform(path_name, transform)
+    
+    print(f"Visualized path '{label}' with {len(path)} grid cells")
+
+
 def visualize_path(meshcat, path, color=None, label="path", show_orientations=False):
     """
     Visualize a path in meshcat as a line with waypoint markers.
@@ -210,7 +244,7 @@ def visualize_path(meshcat, path, color=None, label="path", show_orientations=Fa
         cx = (x1 + x2) / 2
         cy = (y1 + y2) / 2
         
-        # Draw segment as thin box
+        # Draw segment as thin box (raised higher to be on top)
         segment_width = 0.03
         segment_height = 0.05
         segment = Box(length, segment_width, segment_height)
@@ -219,7 +253,7 @@ def visualize_path(meshcat, path, color=None, label="path", show_orientations=Fa
         meshcat.SetObject(path_name, segment, color)
         
         rotation = RotationMatrix.MakeZRotation(angle)
-        position = [cx, cy, segment_height / 2]
+        position = [cx, cy, 0.25]  # Raised higher to be on top of grid cells
         transform = RigidTransform(rotation, position)
         meshcat.SetTransform(path_name, transform)
     
@@ -236,13 +270,13 @@ def visualize_path(meshcat, path, color=None, label="path", show_orientations=Fa
         if i == 0:
             marker_color = Rgba(0.0, 1.0, 0.0, 0.9)  # Green for start
         elif i == len(path) - 1:
-            marker_color = Rgba(1.0, 0.0, 0.0, 0.9)  # Red for end
+            marker_color = Rgba(0.0, 1.0, 0.0, 0.9)  # Green for end (changed from red)
         else:
             marker_color = color
         
         meshcat.SetObject(path_name, marker, marker_color)
         
-        position = [x, y, marker_height / 2]
+        position = [x, y, 0.3]  # Raised higher to be on top of grid cells
         transform = RigidTransform(position)
         meshcat.SetTransform(path_name, transform)
         
@@ -325,3 +359,97 @@ def visualize_scene_detection(station, station_context, tables, obstacles):
     output_path = Path("/workspaces/robman-final-proj/scene_detection.png")
     cv2.imwrite(str(output_path), result_img)
     print(f"\nScene detection saved to: {output_path}")
+
+def visualize_all_paths(meshcat, all_paths, show_orientations=False):
+    """
+    Visualize multiple paths at once without overwriting.
+    
+    Args:
+        meshcat: Meshcat visualizer
+        all_paths: list of paths, where each path is a list of (x, y)
+        show_orientations: display direction arrows on segments
+    """
+    # Remove previous multi-path visualization
+    meshcat.Delete("paths")
+
+    # Optionally give distinct colors if desired
+    # cycle through a color palette
+    palette = [
+        Rgba(1, 0, 0, 1.0),
+        # Rgba(0, 1, 0, 1.0),
+        # Rgba(0, 0, 1, 1.0),
+        # Rgba(1, 1, 0, 1.0),
+        # Rgba(1, 0, 1, 1.0),
+        # Rgba(0, 1, 1, 1.0),
+    ]
+    
+    for idx, path in enumerate(all_paths):
+        color = palette[idx % len(palette)]
+        root_name = f"paths/path_{idx}"
+        visualize_single_path(meshcat, path, color, root_name, show_orientations)
+
+    print(f"Visualized {len(all_paths)} paths.")
+
+def visualize_single_path(meshcat, path, color, root_name, show_orientations=False):
+    """
+    Internal function to visualize a single path under a unique namespace.
+    """
+    if len(path) < 2:
+        return
+
+    # Draw segments
+    for i in range(len(path) - 1):
+        x1, y1 = path[i]
+        x2, y2 = path[i + 1]
+        
+        dx = x2 - x1
+        dy = y2 - y1
+        length = np.hypot(dx, dy)
+        theta = np.arctan2(dy, dx)
+        
+        cx = 0.5 * (x1 + x2)
+        cy = 0.5 * (y1 + y2)
+
+        segment = Box(length, 0.03, 0.05)
+        name = f"{root_name}/segments/seg_{i}"
+        meshcat.SetObject(name, segment, color)
+        
+        transform = RigidTransform(
+            RotationMatrix.MakeZRotation(theta),
+            [cx, cy, 0.3],
+        )
+        meshcat.SetTransform(name, transform)
+
+    # Draw waypoints
+    for i, (x, y) in enumerate(path):
+        if i == 0:
+            wp_color = Rgba(0, 1, 0, 1)    # start = green
+        elif i == len(path) - 1:
+            wp_color = Rgba(0, 1, 0, 1)    # start = green
+        else:
+            wp_color = color
+
+        marker = Cylinder(0.05, 0.1)
+        name = f"{root_name}/waypoints/wp_{i}"
+        meshcat.SetObject(name, marker, wp_color)
+        meshcat.SetTransform(name, RigidTransform([x, y, 0.3]))
+
+        if show_orientations and i < len(path) - 1:
+            nx, ny = path[i + 1]
+            dx = nx - x
+            dy = ny - y
+            theta = np.arctan2(dy, dx)
+
+            arrow = Box(0.15, 0.03, 0.08)
+            aname = f"{root_name}/orientations/arrow_{i}"
+            meshcat.SetObject(aname, arrow, Rgba(1, 1, 0, 0.8))
+
+            ax = x + (0.15 / 2 + 0.05) * np.cos(theta)
+            ay = y + (0.15 / 2 + 0.05) * np.sin(theta)
+
+            transform = RigidTransform(
+                RotationMatrix.MakeZRotation(theta),
+                [ax, ay, 0.3],
+            )
+            meshcat.SetTransform(aname, transform)
+
