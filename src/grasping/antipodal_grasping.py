@@ -262,7 +262,7 @@ def get_best_antipodal_grasp(cloud, rng, num_samples=100, meshcat=None):
         max_pts = min(contact_pts.shape[1], 50)  # limit for clarity
         for i in range(max_pts):
             pt = contact_pts[:, i]
-            meshcat.SetObject(f"grasp_contacts/contact_{i}", Sphere(0.008), Rgba(1, 0, 0, 0.8))
+            meshcat.SetObject(f"grasp_contacts/contact_{i}", Sphere(0.004), Rgba(1, 0, 0, 0.8))
             meshcat.SetTransform(f"grasp_contacts/contact_{i}", RigidTransform(pt))
 
         print(f"    Visualized {max_pts} contact points in red (folder: grasp_contacts)")
